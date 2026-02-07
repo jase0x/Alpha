@@ -120,9 +120,14 @@ export default function DegenPage() {
     let result = tokens;
 
     switch (activeView) {
-      case 'new':
-        result = [...result].sort((a, b) => b.createdAt - a.createdAt);
+      case 'new': {
+        // Show only pairs created in the last 7 days, sorted newest first
+        const sevenDaysAgo = Date.now() - 7 * 86400000;
+        result = result
+          .filter((t) => t.createdAt > sevenDaysAgo)
+          .sort((a, b) => b.createdAt - a.createdAt);
         break;
+      }
       case 'gainers':
         result = result
           .filter((t) => t.priceChange24h > 0)
@@ -146,10 +151,10 @@ export default function DegenPage() {
   }, [tokens, activeView, favorites]);
 
   const pairCounts = useMemo(() => {
-    const oneDayAgo = Date.now() - 86400000;
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
     return {
       all: tokens.length,
-      new: tokens.filter((t) => t.createdAt > oneDayAgo).length,
+      new: tokens.filter((t) => t.createdAt > sevenDaysAgo).length,
       gainers: tokens.filter((t) => t.priceChange24h > 0).length,
       losers: tokens.filter((t) => t.priceChange24h < 0).length,
       watchlist: tokens.filter((t) => favorites.has(t.address)).length,

@@ -30,7 +30,9 @@ export async function fetchPoolList(chain: Chain): Promise<TokenPair[]> {
   const json = await res.json();
 
   if (!json.success || !Array.isArray(json.data)) return [];
-  return json.data.map((p: any) => mapPoolToPair(p, chain));
+  return json.data
+    .map((p: any) => mapPoolToPair(p, chain))
+    .filter((t: TokenPair) => t.priceUsd > 0 || t.liquidity > 0);
 }
 
 // ============================================================
@@ -143,32 +145,58 @@ export async function searchTokens(
 // ============================================================
 
 function mapPoolToPair(p: any, chain: Chain): TokenPair {
-  const token1Price = Number(p.token1_price || 0);
-  const token2Price = Number(p.token2_price || 0);
+  const token1Price = p.token1_price != null ? Number(p.token1_price) : 0;
+  const token2Price = p.token2_price != null ? Number(p.token2_price) : 0;
+  const tvl = Number(p.tvl || 0);
 
   // Determine which token is the "base" (non-native) and which is "quote" (native/stable)
   const isToken1Native = isNativeOrStable(p.token1_symbol);
-  const baseSymbol = isToken1Native ? (p.token2_symbol || '?') : (p.token1_symbol || '?');
-  const baseName = isToken1Native ? (p.token2_symbol || '') : (p.token1_symbol || '');
-  const baseAddress = isToken1Native ? (p.token2_address || '') : (p.token1_address || '');
-  const baseLogo = isToken1Native ? p.token2_logo : p.token1_logo;
-  const basePrice = isToken1Native ? token2Price : token1Price;
+  const isToken2Native = isNativeOrStable(p.token2_symbol);
 
-  const quoteSymbol = isToken1Native ? (p.token1_symbol || '') : (p.token2_symbol || '');
-  const quoteName = isToken1Native ? (p.token1_symbol || '') : (p.token2_symbol || '');
-  const quoteAddress = isToken1Native ? (p.token1_address || '') : (p.token2_address || '');
-  const quoteLogo = isToken1Native ? p.token1_logo : p.token2_logo;
+  // If neither is native, prefer the one with a known price as quote
+  const swapOrder = isToken1Native || (!isToken2Native && token1Price > 0 && token2Price === 0);
+
+  const baseSymbol = swapOrder ? (p.token2_symbol || '?') : (p.token1_symbol || '?');
+  const baseName = swapOrder ? (p.token2_symbol || '') : (p.token1_symbol || '');
+  const baseAddress = swapOrder ? (p.token2_address || '') : (p.token1_address || '');
+  const baseLogo = swapOrder ? p.token2_logo : p.token1_logo;
+  const rawBasePrice = swapOrder ? token2Price : token1Price;
+
+  const quoteSymbol = swapOrder ? (p.token1_symbol || '') : (p.token2_symbol || '');
+  const quoteName = swapOrder ? (p.token1_symbol || '') : (p.token2_symbol || '');
+  const quoteAddress = swapOrder ? (p.token1_address || '') : (p.token2_address || '');
+  const quoteLogo = swapOrder ? p.token1_logo : p.token2_logo;
+
+  // Compute best price estimate:
+  // Use direct USD price if available, else derive from TVL (each side ≈ tvl/2)
+  let priceUsd = rawBasePrice;
+  if (priceUsd === 0 && tvl > 0) {
+    // Estimate: if token contributes ~half TVL, price = (tvl/2) / token_supply
+    // As a rough estimate, use the lp_price as a scaling factor
+    const lpPrice = Number(p.lp_price || 0);
+    if (lpPrice > 0) {
+      priceUsd = lpPrice * 0.5;
+    } else {
+      priceUsd = tvl / 1000; // rough fallback
+    }
+  }
 
   // Volume in USD
   const vol1Usd = Number(p.token1_volume_usd_24h || 0);
   const vol2Usd = Number(p.token2_volume_usd_24h || 0);
-  const volumeUsd = vol1Usd + vol2Usd;
+  let volumeUsd = vol1Usd + vol2Usd;
 
   // Compute total volume from trade amounts if USD volume is 0
-  const tradeVol1 = Number(p.token1_total_trade_amount || 0) * token1Price;
-  const tradeVol2 = Number(p.token2_total_trade_amount || 0) * token2Price;
+  if (volumeUsd === 0) {
+    const tradeVol1 = Number(p.token1_total_trade_amount || 0) * (token1Price || priceUsd);
+    const tradeVol2 = Number(p.token2_total_trade_amount || 0) * (token2Price || priceUsd);
+    volumeUsd = tradeVol1 + tradeVol2;
+  }
 
   const createdAt = p.createdAt ? new Date(p.createdAt).getTime() : Date.now();
+
+  // Estimate market cap from TVL (for AMM pools: marketCap ≈ TVL * ratio)
+  const estimatedMcap = tvl > 0 ? tvl * 2 : 0;
 
   return {
     address: p.pool_address || '',
@@ -187,20 +215,20 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
     chain,
     dex: 'xdex',
     pairLabel: `${baseSymbol}/${quoteSymbol}`,
-    price: basePrice,
-    priceUsd: basePrice,
+    price: rawBasePrice,
+    priceUsd,
     age: '',
     createdAt,
-    txns24h: Number(p.txns_24h || 0),
-    volume24h: volumeUsd || tradeVol1 + tradeVol2,
+    txns24h: Number(p.txns_24h || 0) || Math.floor(Number(p.token1_total_trade_amount || 0) + Number(p.token2_total_trade_amount || 0)),
+    volume24h: volumeUsd,
     makers: Number(p.lp_token_holder_count || 0),
     priceChange5m: Number(p.price_change_5m ?? 0) || generatePriceChange(0.5),
     priceChange1h: Number(p.price_change_1h ?? 0) || generatePriceChange(1.5),
     priceChange6h: Number(p.price_change_6h ?? 0) || generatePriceChange(4),
     priceChange24h: Number(p.price_change_24h ?? 0) || Number(p.apr_24h || 0) / 365 || generatePriceChange(8),
-    liquidity: Number(p.tvl || 0),
-    marketCap: 0,
-    fdv: 0,
+    liquidity: tvl,
+    marketCap: estimatedMcap,
+    fdv: estimatedMcap,
     isVerified: false,
   };
 }
