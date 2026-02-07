@@ -25,6 +25,7 @@ import {
 import { TokenPair, OHLCVData } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { fetchOHLCV, fetchPoolDetails, fetchPoolDetail } from '@/services/api';
+import { fetchTokenHolders, fetchLPHolders, fetchRecentPoolTxns, TokenHolder, PoolTransaction, PoolTxSummary } from '@/services/rpc';
 import { computeSafetyScore } from '@/utils/safetyScore';
 import { getSentiment, vote as voteSentiment, Sentiment } from '@/services/sentimentStore';
 import { createAlert, getAlertsForToken, deleteAlert, requestNotificationPermission, PriceAlert } from '@/services/alertStore';
@@ -57,90 +58,18 @@ type ChartTimeframe = '5m' | '15m' | '1h' | '4h' | '1d';
 type BottomTab = 'transactions' | 'holders' | 'lp';
 type TxFilter = 'all' | 'buys' | 'sells' | 'lp';
 
-interface MockTx {
-  id: number;
-  date: string;
-  timestamp: string;
-  type: 'Buy' | 'Sell' | 'Add LP' | 'Remove LP';
-  totalUsd: number;
-  tokens: number;
-  quoteAmount: number;
-  usdPrice: number;
-  quotePrice: number;
-  maker: string;
-  txHash: string;
+function formatTxAge(ts: number): string {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ${mins % 60}m ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
-interface MockHolder {
-  rank: number;
-  address: string;
-  balance: number;
-  percent: number;
-}
-
-function generateMockTxns(token: TokenPair): MockTx[] {
-  const txns: MockTx[] = [];
-  const count = Math.min(token.txns24h || 20, 50);
-  const now = Date.now();
-
-  for (let i = 0; i < count; i++) {
-    const isLP = Math.random() < 0.08;
-    const isBuy = Math.random() > 0.45;
-    const type: MockTx['type'] = isLP
-      ? (Math.random() > 0.5 ? 'Add LP' : 'Remove LP')
-      : (isBuy ? 'Buy' : 'Sell');
-
-    const amount = Math.random() * 5 + 0.01;
-    const tokens = amount / (token.priceUsd || 0.001);
-    const elapsed = Math.floor(Math.random() * 86400000);
-    const hours = Math.floor(elapsed / 3600000);
-    const mins = Math.floor((elapsed % 3600000) / 60000);
-    const dateStr = hours > 0 ? `${hours}h ${mins}m ago` : `${mins}m ago`;
-    const txTime = new Date(now - elapsed);
-    const timestamp = txTime.toISOString().replace('T', ' ').slice(0, 19);
-
-    const addrParts = token.address || 'abcdefghijklmnop';
-    const makerAddr = `${addrParts.slice(0, 4)}...${String(i).padStart(4, '0').slice(-4)}`;
-    const txHash = `${addrParts.slice(0, 8)}${String(i).padStart(8, '0')}${'a'.repeat(48)}`.slice(0, 64);
-
-    txns.push({
-      id: i,
-      date: dateStr,
-      timestamp,
-      type,
-      totalUsd: amount,
-      tokens,
-      quoteAmount: tokens * (token.price || 0),
-      usdPrice: token.priceUsd,
-      quotePrice: token.price || 0,
-      maker: makerAddr,
-      txHash,
-    });
-  }
-  return txns;
-}
-
-function generateMockHolders(token: TokenPair, type: 'token' | 'lp'): MockHolder[] {
-  const holders: MockHolder[] = [];
-  const count = type === 'lp' ? Math.min(token.makers || 5, 20) : Math.max(token.makers * 3, 10);
-  let remaining = 100;
-
-  for (let i = 0; i < Math.min(count, 25); i++) {
-    const pct = i === 0
-      ? 15 + Math.random() * 25
-      : Math.max(0.01, remaining * (Math.random() * 0.3));
-    const actualPct = Math.min(pct, remaining);
-    remaining -= actualPct;
-
-    const addr = token.address || 'abcdef';
-    holders.push({
-      rank: i + 1,
-      address: `${addr.slice(0, 4)}...${String(i * 7 + 3).padStart(4, '0').slice(-4)}`,
-      balance: actualPct * 1000,
-      percent: actualPct,
-    });
-  }
-  return holders.sort((a, b) => b.percent - a.percent);
+function getExplorerUrl(chain: string): string {
+  return chain === 'x1' ? 'https://explorer.x1.xyz' : 'https://solscan.io';
 }
 
 export default function TokenDetail({
@@ -291,12 +220,52 @@ export default function TokenDetail({
     { label: '24H', value: t.priceChange24h },
   ];
 
-  const buyPercent = Math.min(85, Math.max(15, 50 + t.priceChange24h * 2));
+  // Real on-chain data states
+  const [poolTxns, setPoolTxns] = useState<PoolTxSummary | null>(null);
+  const [tokenHolders, setTokenHolders] = useState<TokenHolder[]>([]);
+  const [lpHolders, setLpHolders] = useState<TokenHolder[]>([]);
+  const [txnsLoading, setTxnsLoading] = useState(true);
+  const [holdersLoading, setHoldersLoading] = useState(true);
+
+  // Fetch real transactions from X1 RPC
+  useEffect(() => {
+    let cancelled = false;
+    setTxnsLoading(true);
+    fetchRecentPoolTxns(token.address, token.chain, 30).then((data) => {
+      if (!cancelled) {
+        setPoolTxns(data);
+        setTxnsLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [token.address, token.chain]);
+
+  // Fetch real token holders + LP holders from X1 RPC
+  useEffect(() => {
+    let cancelled = false;
+    setHoldersLoading(true);
+    const lpMint = token.lpMint || '';
+    Promise.allSettled([
+      fetchTokenHolders(token.baseToken.address, token.chain),
+      lpMint ? fetchLPHolders(lpMint, token.chain) : Promise.resolve([]),
+    ]).then(([tokenResult, lpResult]) => {
+      if (!cancelled) {
+        setTokenHolders(tokenResult.status === 'fulfilled' ? tokenResult.value : []);
+        setLpHolders(lpResult.status === 'fulfilled' ? lpResult.value : []);
+        setHoldersLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [token.baseToken.address, token.chain]);
+
+  // Buy/sell data from real transactions
+  const buys = poolTxns?.buys ?? 0;
+  const sells = poolTxns?.sells ?? 0;
+  const buyVolume = poolTxns?.buyVolume ?? 0;
+  const sellVolume = poolTxns?.sellVolume ?? 0;
+  const totalTxCount = buys + sells;
+  const buyPercent = totalTxCount > 0 ? (buys / totalTxCount) * 100 : 50;
   const sellPercent = 100 - buyPercent;
-  const buys = Math.round(t.txns24h * (buyPercent / 100));
-  const sells = t.txns24h - buys;
-  const buyVolume = t.volume24h * (buyPercent / 100);
-  const sellVolume = t.volume24h - buyVolume;
 
   const isLowLiquidity = t.liquidity < 1000;
   const isShallowLiquidity = t.liquidity >= 1000 && t.liquidity < 10000;
@@ -321,16 +290,15 @@ export default function TokenDetail({
   const sentimentTotal = sentiment.bullish + sentiment.bearish;
   const bullishPct = sentimentTotal > 0 ? (sentiment.bullish / sentimentTotal) * 100 : 50;
 
-  const mockTxns = useMemo(() => generateMockTxns(t), [t]);
-  const mockHolders = useMemo(() => generateMockHolders(t, 'token'), [t]);
-  const mockLPHolders = useMemo(() => generateMockHolders(t, 'lp'), [t]);
+  const explorerBase = getExplorerUrl(t.chain);
 
   const filteredTxns = useMemo(() => {
-    if (txFilter === 'all') return mockTxns;
-    if (txFilter === 'buys') return mockTxns.filter((tx) => tx.type === 'Buy');
-    if (txFilter === 'sells') return mockTxns.filter((tx) => tx.type === 'Sell');
-    return mockTxns.filter((tx) => tx.type === 'Add LP' || tx.type === 'Remove LP');
-  }, [mockTxns, txFilter]);
+    const txns = poolTxns?.transactions ?? [];
+    if (txFilter === 'all') return txns;
+    if (txFilter === 'buys') return txns.filter((tx) => tx.type === 'Buy');
+    if (txFilter === 'sells') return txns.filter((tx) => tx.type === 'Sell');
+    return txns.filter((tx) => tx.type === 'Add LP' || tx.type === 'Remove LP');
+  }, [poolTxns, txFilter]);
 
   const bottomTabs: { id: BottomTab; label: string; count?: number }[] = [
     { id: 'transactions', label: 'Transactions', count: t.txns24h },
@@ -476,53 +444,62 @@ export default function TokenDetail({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-8 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
+                  <div className="grid grid-cols-6 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
                     <span>Date</span>
                     <span>Type</span>
-                    <span className="text-right">Total USD</span>
-                    <span className="text-right">Tokens</span>
-                    <span className="text-right">{t.quoteToken.symbol}</span>
-                    <span className="text-right">USD Price</span>
+                    <span className="text-right">Amount</span>
+                    <span className="text-right">Token Qty</span>
                     <span className="text-right">Maker</span>
                     <span className="text-right">TX</span>
                   </div>
 
-                  {filteredTxns.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="grid grid-cols-8 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
-                    >
-                      <span className="text-xdex-text-muted" title={tx.timestamp}>{tx.date}</span>
-                      <span className={
-                        tx.type === 'Buy' ? 'text-xdex-green font-medium' :
-                        tx.type === 'Sell' ? 'text-xdex-red font-medium' :
-                        'text-xdex-accent font-medium'
-                      }>
-                        {tx.type}
-                      </span>
-                      <span className="text-right text-white font-mono">{formatUsd(tx.totalUsd)}</span>
-                      <span className="text-right text-xdex-text-secondary font-mono">{tx.tokens.toFixed(2)}</span>
-                      <span className="text-right text-xdex-text-secondary font-mono">{tx.quoteAmount.toFixed(4)}</span>
-                      <span className="text-right text-white font-mono">{formatPrice(tx.usdPrice)}</span>
-                      <span className="text-right text-xdex-accent font-mono cursor-pointer hover:underline">{tx.maker}</span>
-                      <span className="text-right">
-                        <a
-                          href={`https://explorer.x1blockchain.org/tx/${tx.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xdex-text-muted hover:text-xdex-accent transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink size={10} />
-                        </a>
-                      </span>
-                    </div>
-                  ))}
-
-                  {filteredTxns.length === 0 && (
+                  {txnsLoading ? (
                     <div className="flex items-center justify-center py-8 text-xs text-xdex-text-muted">
-                      No transactions found
+                      <div className="w-4 h-4 border-2 border-xdex-accent border-t-transparent rounded-full animate-spin mr-2" />
+                      Loading on-chain transactions...
                     </div>
+                  ) : (
+                    <>
+                      {filteredTxns.map((tx) => (
+                        <div
+                          key={tx.signature}
+                          className="grid grid-cols-6 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
+                        >
+                          <span className="text-xdex-text-muted">{formatTxAge(tx.timestamp)}</span>
+                          <span className={
+                            tx.type === 'Buy' ? 'text-xdex-green font-medium' :
+                            tx.type === 'Sell' ? 'text-xdex-red font-medium' :
+                            'text-xdex-accent font-medium'
+                          }>
+                            {tx.type}
+                          </span>
+                          <span className="text-right text-white font-mono">{formatUsd(tx.totalUsd)}</span>
+                          <span className="text-right text-xdex-text-secondary font-mono">{tx.tokenAmount.toFixed(2)}</span>
+                          <span className="text-right text-xdex-accent font-mono cursor-pointer hover:underline">
+                            <a href={`${explorerBase}/address/${tx.maker}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                              {tx.maker}
+                            </a>
+                          </span>
+                          <span className="text-right">
+                            <a
+                              href={`${explorerBase}/tx/${tx.signature}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xdex-text-muted hover:text-xdex-accent transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={10} />
+                            </a>
+                          </span>
+                        </div>
+                      ))}
+
+                      {filteredTxns.length === 0 && (
+                        <div className="flex items-center justify-center py-8 text-xs text-xdex-text-muted">
+                          No transactions found
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -535,13 +512,22 @@ export default function TokenDetail({
                     <span className="text-right">Balance</span>
                     <span className="text-right">% Supply</span>
                   </div>
-                  {mockHolders.map((h) => (
+                  {holdersLoading ? (
+                    <div className="flex items-center justify-center py-8 text-xs text-xdex-text-muted">
+                      <div className="w-4 h-4 border-2 border-xdex-accent border-t-transparent rounded-full animate-spin mr-2" />
+                      Loading on-chain holders...
+                    </div>
+                  ) : tokenHolders.length > 0 ? tokenHolders.map((h) => (
                     <div
                       key={h.rank}
                       className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
                     >
                       <span className="text-xdex-text-muted">#{h.rank}</span>
-                      <span className="text-xdex-accent font-mono cursor-pointer hover:underline">{h.address}</span>
+                      <span className="text-xdex-accent font-mono cursor-pointer hover:underline">
+                        <a href={`${explorerBase}/address/${h.address}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                          {h.address.slice(0, 4)}...{h.address.slice(-4)}
+                        </a>
+                      </span>
                       <span className="text-right text-white font-mono">{formatNumber(Math.round(h.balance))}</span>
                       <span className="text-right">
                         <span className="text-xdex-text-secondary font-mono">{h.percent.toFixed(2)}%</span>
@@ -553,7 +539,11 @@ export default function TokenDetail({
                         </div>
                       </span>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="flex items-center justify-center py-8 text-xs text-xdex-text-muted">
+                      No holder data available
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -573,13 +563,22 @@ export default function TokenDetail({
                     <span className="text-right">LP Tokens</span>
                     <span className="text-right">% Pool</span>
                   </div>
-                  {mockLPHolders.map((h) => (
+                  {holdersLoading ? (
+                    <div className="flex items-center justify-center py-8 text-xs text-xdex-text-muted">
+                      <div className="w-4 h-4 border-2 border-xdex-accent border-t-transparent rounded-full animate-spin mr-2" />
+                      Loading on-chain LP holders...
+                    </div>
+                  ) : lpHolders.length > 0 ? lpHolders.map((h) => (
                     <div
                       key={h.rank}
                       className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
                     >
                       <span className="text-xdex-text-muted">#{h.rank}</span>
-                      <span className="text-xdex-accent font-mono cursor-pointer hover:underline">{h.address}</span>
+                      <span className="text-xdex-accent font-mono cursor-pointer hover:underline">
+                        <a href={`${explorerBase}/address/${h.address}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                          {h.address.slice(0, 4)}...{h.address.slice(-4)}
+                        </a>
+                      </span>
                       <span className="text-right text-white font-mono">{formatNumber(Math.round(h.balance))}</span>
                       <span className="text-right">
                         <span className="text-xdex-text-secondary font-mono">{h.percent.toFixed(2)}%</span>
@@ -591,7 +590,11 @@ export default function TokenDetail({
                         </div>
                       </span>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="flex items-center justify-center py-8 text-xs text-xdex-text-muted">
+                      No LP holder data available
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1197,7 +1200,7 @@ export default function TokenDetail({
 
             <div className="flex items-center justify-center gap-4 mt-4">
               <a
-                href={`https://explorer.x1blockchain.org/address/${t.baseToken.address}`}
+                href={`${explorerBase}/address/${t.baseToken.address}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-xdex-text-muted hover:text-xdex-accent transition-colors"

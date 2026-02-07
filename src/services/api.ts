@@ -359,6 +359,7 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
     fee24h: Number(p.token1_fee_24h || 0) + Number(p.token2_fee_24h || 0),
     apr24h,
     lpPrice: Number(p.lp_price || 0),
+    lpMint: p.pool_info?.lpMint || '',
   };
 }
 

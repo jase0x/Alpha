@@ -1,88 +1,94 @@
 import { TokenPair } from '@/types/token';
+import { fetchRecentPoolTxns, PoolTransaction } from '@/services/rpc';
 
 export interface WhaleActivity {
   id: string;
-  walletShort: string; // e.g. "0x3f...a2c1"
+  walletShort: string;
   type: 'buy' | 'sell' | 'add_lp' | 'remove_lp';
   amountUsd: number;
   tokenAmount: number;
   timestamp: number;
   isSmartMoney: boolean;
-  pnlPercent?: number; // realized PnL for sells
+  pnlPercent?: number;
+  signature: string;
 }
 
 export interface WhaleStats {
   totalWhaleVolume: number;
-  smartMoneyInflow: number;  // net buy - sell by smart wallets
+  smartMoneyInflow: number;
   largestBuy: number;
   largestSell: number;
   whaleCount: number;
   recentActivity: WhaleActivity[];
 }
 
+const EMPTY_STATS: WhaleStats = {
+  totalWhaleVolume: 0,
+  smartMoneyInflow: 0,
+  largestBuy: 0,
+  largestSell: 0,
+  whaleCount: 0,
+  recentActivity: [],
+};
+
 /**
- * Generate realistic whale activity from token data.
- * In production this would come from on-chain indexing.
+ * Fetch real whale activity from on-chain transaction data.
+ * Filters for large transactions relative to pool liquidity.
  */
-export function getWhaleActivity(token: TokenPair): WhaleStats {
+export async function getWhaleActivity(token: TokenPair): Promise<WhaleStats> {
+  try {
+    const txSummary = await fetchRecentPoolTxns(token.address, token.chain, 50);
+    if (!txSummary || txSummary.transactions.length === 0) return EMPTY_STATS;
+
+    // Whale threshold: transactions > 2% of liquidity or > $500
+    const whaleThreshold = Math.max(500, token.liquidity * 0.02);
+
+    const whaleTxns = txSummary.transactions.filter(
+      (tx) => tx.totalUsd >= whaleThreshold,
+    );
+
+    if (whaleTxns.length === 0) {
+      // If no whale-sized txns, show all as general activity
+      return buildStats(txSummary.transactions, token);
+    }
+
+    return buildStats(whaleTxns, token);
+  } catch {
+    return EMPTY_STATS;
+  }
+}
+
+function buildStats(txns: PoolTransaction[], token: TokenPair): WhaleStats {
   const activities: WhaleActivity[] = [];
-  const now = Date.now();
-
-  // Derive whale activity from volume and token characteristics
-  const vol = token.volume24h;
-  const liq = token.liquidity;
-  const makers = token.makers;
-
-  // Number of whale-sized transactions (> 2% of liquidity or > $500)
-  const whaleThreshold = Math.max(500, liq * 0.02);
-  const whaleCount = Math.max(1, Math.min(12, Math.floor(makers * 0.15)));
-
-  // Generate activity entries
   let totalWhaleVol = 0;
   let smartInflow = 0;
   let largestBuy = 0;
   let largestSell = 0;
 
-  // Use token address as seed for consistent-per-token pseudorandom
-  const seed = hashCode(token.address);
+  // Track unique makers for whale count
+  const uniqueMakers = new Set<string>();
 
-  for (let i = 0; i < whaleCount; i++) {
-    const r = pseudoRandom(seed + i * 31);
-    const r2 = pseudoRandom(seed + i * 47 + 7);
-    const r3 = pseudoRandom(seed + i * 63 + 13);
+  for (let i = 0; i < txns.length; i++) {
+    const tx = txns[i];
+    uniqueMakers.add(tx.maker);
 
-    const isBuy = r > 0.4; // slightly buy biased
-    const isLP = r < 0.1;
-    const type: WhaleActivity['type'] = isLP
-      ? (r2 > 0.5 ? 'add_lp' : 'remove_lp')
-      : (isBuy ? 'buy' : 'sell');
+    const type = mapTxType(tx.type);
+    const amountUsd = tx.totalUsd > 0
+      ? tx.totalUsd
+      : tx.tokenAmount * token.priceUsd;
 
-    // Amount scales with volume but has whale-sized minimum
-    const baseAmount = whaleThreshold + r2 * vol * 0.15;
-    const amountUsd = Math.max(500, baseAmount);
-    const tokenAmount = amountUsd / (token.priceUsd || 0.001);
-
-    const isSmartMoney = r3 > 0.65;
-    const elapsed = Math.floor(r * 86400000); // within last 24h
-    const timestamp = now - elapsed;
-
-    const addrSeed = seed + i * 97;
-    const walletShort = `0x${hexChars(addrSeed, 4)}...${hexChars(addrSeed + 1, 4)}`;
-
-    let pnlPercent: number | undefined;
-    if (type === 'sell') {
-      pnlPercent = (r2 - 0.3) * 200; // -60% to +140%
-    }
+    // Simple smart money heuristic: larger transactions are more likely smart money
+    const isSmartMoney = amountUsd > token.liquidity * 0.05;
 
     activities.push({
-      id: `whale-${i}`,
-      walletShort,
+      id: `whale-${tx.signature.slice(0, 8)}-${i}`,
+      walletShort: tx.maker,
       type,
       amountUsd,
-      tokenAmount,
-      timestamp,
+      tokenAmount: tx.tokenAmount,
+      timestamp: tx.timestamp,
       isSmartMoney,
-      pnlPercent,
+      signature: tx.signature,
     });
 
     totalWhaleVol += amountUsd;
@@ -100,32 +106,17 @@ export function getWhaleActivity(token: TokenPair): WhaleStats {
     smartMoneyInflow: smartInflow,
     largestBuy,
     largestSell,
-    whaleCount,
+    whaleCount: uniqueMakers.size,
     recentActivity: activities,
   };
 }
 
-// Simple hash for deterministic pseudo-random from address string
-function hashCode(s: string): number {
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    hash = ((hash << 5) - hash) + s.charCodeAt(i);
-    hash |= 0;
+function mapTxType(type: PoolTransaction['type']): WhaleActivity['type'] {
+  switch (type) {
+    case 'Buy': return 'buy';
+    case 'Sell': return 'sell';
+    case 'Add LP': return 'add_lp';
+    case 'Remove LP': return 'remove_lp';
+    default: return 'buy';
   }
-  return Math.abs(hash);
-}
-
-function pseudoRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
-
-function hexChars(seed: number, len: number): string {
-  const chars = '0123456789abcdef';
-  let result = '';
-  for (let i = 0; i < len; i++) {
-    const idx = Math.floor(pseudoRandom(seed + i * 11) * 16);
-    result += chars[idx];
-  }
-  return result;
 }

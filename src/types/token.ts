@@ -40,6 +40,7 @@ export interface TokenPair {
   fee24h?: number;
   apr24h?: number;
   lpPrice?: number;
+  lpMint?: string;
 }
 
 export interface TokenDetail extends TokenPair {
