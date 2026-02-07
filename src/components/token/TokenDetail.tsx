@@ -16,6 +16,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { TokenPair, OHLCVData } from '@/types/token';
+import { ActiveBoost } from '@/types/boost';
 import { fetchOHLCV, fetchPoolDetails, fetchPoolDetail } from '@/services/api';
 import {
   formatPrice,
@@ -36,6 +37,7 @@ interface TokenDetailProps {
   onSwap: (token: TokenPair) => void;
   isFavorited: boolean;
   onFavorite: (address: string) => void;
+  boost?: ActiveBoost | null;
 }
 
 type ChartTimeframe = '5m' | '15m' | '1h' | '4h' | '1d';
@@ -136,6 +138,7 @@ export default function TokenDetail({
   onSwap,
   isFavorited,
   onFavorite,
+  boost,
 }: TokenDetailProps) {
   const [chartData, setChartData] = useState<OHLCVData[]>([]);
   const [chartLoading, setChartLoading] = useState(true);
@@ -509,6 +512,39 @@ export default function TokenDetail({
 
         {/* RIGHT: Token info panel */}
         <div className="w-[380px] flex-shrink-0 overflow-y-auto">
+          {/* Boost banner (Diamond tier) */}
+          {boost?.bannerImageUrl && (
+            <div className="relative">
+              <img
+                src={boost.bannerImageUrl}
+                alt="Promoted"
+                className="w-full h-28 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+              <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
+                <span
+                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
+                  style={{ color: boost.tierConfig.color, backgroundColor: `${boost.tierConfig.color}20` }}
+                >
+                  {boost.tierConfig.name}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Boost badge (non-banner tiers) */}
+          {boost && !boost.bannerImageUrl && (
+            <div
+              className="flex items-center gap-2 px-5 py-2 border-b"
+              style={{ borderColor: `${boost.tierConfig.color}30`, backgroundColor: `${boost.tierConfig.color}08` }}
+            >
+              <span style={{ color: boost.tierConfig.color }} className="text-[10px] font-semibold">
+                &#9889; {boost.tierConfig.name}
+              </span>
+              <span className="text-[9px] text-xdex-text-muted">Promoted</span>
+            </div>
+          )}
+
           {/* Token header */}
           <div className="px-5 pt-5 pb-4 border-b border-xdex-border">
             <div className="flex items-start justify-between">

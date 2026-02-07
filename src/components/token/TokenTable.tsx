@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { TokenPair, SortField, SortDirection } from '@/types/token';
+import { ActiveBoost } from '@/types/boost';
 import TokenRow from './TokenRow';
 
 interface TokenTableProps {
@@ -11,6 +12,7 @@ interface TokenTableProps {
   onSwap: (token: TokenPair) => void;
   onFavorite: (address: string) => void;
   favorites: Set<string>;
+  boostMap?: Map<string, ActiveBoost>;
 }
 
 interface ColumnDef {
@@ -59,6 +61,7 @@ export default function TokenTable({
   onSwap,
   onFavorite,
   favorites,
+  boostMap,
 }: TokenTableProps) {
   const [sortField, setSortField] = useState<SortField>('volume');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
@@ -130,6 +133,7 @@ export default function TokenTable({
               onFavorite={onFavorite}
               onClick={onTokenClick}
               onSwap={onSwap}
+              boost={boostMap?.get(token.address.toLowerCase()) ?? null}
             />
           ))}
         </tbody>

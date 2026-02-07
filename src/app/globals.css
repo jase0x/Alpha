@@ -141,3 +141,30 @@ input:focus {
   background: #ff1744;
   transition: width 0.3s ease;
 }
+
+/* Boosted row glow effect */
+.boosted-row {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--boost-color, #f59e0b) 4%, transparent),
+    transparent 60%
+  );
+}
+
+.boosted-row:hover {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--boost-color, #f59e0b) 8%, transparent),
+    transparent 60%
+  ) !important;
+}
+
+@keyframes boost-pulse {
+  0%, 100% { box-shadow: inset 2px 0 8px -4px var(--boost-color, #f59e0b); }
+  50% { box-shadow: inset 2px 0 12px -2px var(--boost-color, #f59e0b); }
+}
+
+.boosted-row {
+  animation: boost-pulse 3s ease-in-out infinite;
+}

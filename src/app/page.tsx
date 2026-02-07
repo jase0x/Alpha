@@ -11,12 +11,16 @@ import {
   Layers,
 } from 'lucide-react';
 import { TokenPair, FilterView, TimeFilter, Chain } from '@/types/token';
+import { ActiveBoost } from '@/types/boost';
 import { fetchPoolList } from '@/services/api';
+import { getBoostMap } from '@/services/boostStore';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import TokenTable from '@/components/token/TokenTable';
 import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
+import BoostForm from '@/components/boost/BoostForm';
+import BoostProfile from '@/components/boost/BoostProfile';
 import X1Logo from '@/components/ui/X1Logo';
 import SolanaLogo from '@/components/ui/SolanaLogo';
 
@@ -90,6 +94,12 @@ function AlphaPageContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pendingTokenId = useRef<string | null>(searchParams.get('token'));
 
+  // Boost state
+  const [showBoostForm, setShowBoostForm] = useState(false);
+  const [showBoostProfile, setShowBoostProfile] = useState(false);
+  const [boostMap, setBoostMap] = useState<Map<string, ActiveBoost>>(new Map());
+  const [boostVersion, setBoostVersion] = useState(0);
+
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
 
@@ -149,6 +159,11 @@ function AlphaPageContent() {
       } catch { /* ignore corrupt data */ }
     }
   }, []);
+
+  // Load boost map (refreshes when boostVersion changes)
+  useEffect(() => {
+    setBoostMap(getBoostMap());
+  }, [boostVersion]);
 
   // Sync URL state — deep linking + browser back/forward
   useEffect(() => {
@@ -264,7 +279,10 @@ function AlphaPageContent() {
   return (
     <div className="flex h-screen overflow-hidden bg-xdex-bg">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar
+        onAdvertise={() => setShowBoostForm(true)}
+        onProfile={() => setShowBoostProfile(true)}
+      />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -418,6 +436,7 @@ function AlphaPageContent() {
             onSwap={setSwapToken}
             onFavorite={toggleFavorite}
             favorites={favorites}
+            boostMap={boostMap}
           />
         )}
       </div>
@@ -433,6 +452,7 @@ function AlphaPageContent() {
           }}
           isFavorited={favorites.has(selectedToken.address)}
           onFavorite={toggleFavorite}
+          boost={boostMap.get(selectedToken.address.toLowerCase()) ?? null}
         />
       )}
 
@@ -441,6 +461,27 @@ function AlphaPageContent() {
         <SwapModal
           token={swapToken}
           onClose={() => setSwapToken(null)}
+        />
+      )}
+
+      {/* Boost form modal */}
+      {showBoostForm && (
+        <BoostForm
+          tokens={tokens}
+          chain={activeChain}
+          onClose={() => setShowBoostForm(false)}
+          onSuccess={() => setBoostVersion((v) => v + 1)}
+        />
+      )}
+
+      {/* Boost profile modal */}
+      {showBoostProfile && (
+        <BoostProfile
+          onClose={() => setShowBoostProfile(false)}
+          onNewBoost={() => {
+            setShowBoostProfile(false);
+            setShowBoostForm(true);
+          }}
         />
       )}
     </div>

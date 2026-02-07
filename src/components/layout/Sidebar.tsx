@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Zap,
+  User,
 } from 'lucide-react';
 import DegenLogo from '@/components/ui/DegenLogo';
 
@@ -43,6 +45,8 @@ function XdexHexLogo({ size }: { size: number }) {
 interface SidebarProps {
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  onAdvertise?: () => void;
+  onProfile?: () => void;
 }
 
 const xdexNavItems: {
@@ -66,6 +70,8 @@ const xdexNavItems: {
 export default function Sidebar({
   collapsed: controlledCollapsed,
   onCollapsedChange,
+  onAdvertise,
+  onProfile,
 }: SidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = controlledCollapsed ?? internalCollapsed;
@@ -124,29 +130,50 @@ export default function Sidebar({
           }
 
           return (
-            <button
-              key={item.id}
-              disabled={item.comingSoon}
-              className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all ${
-                isActive
-                  ? 'text-xdex-accent bg-xdex-accent/10 border border-xdex-accent/20'
-                  : item.comingSoon
-                  ? 'text-xdex-text-muted/50 cursor-not-allowed'
-                  : 'text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03]'
-              } ${collapsed ? 'justify-center px-0' : ''}`}
-            >
-              <Icon size={16} strokeWidth={isActive ? 2.2 : 1.6} className="flex-shrink-0" />
-              {!collapsed && (
-                <>
-                  <span className="font-medium">{item.label}</span>
-                  {item.comingSoon && (
-                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-xdex-border/40 text-xdex-text-muted">
-                      Soon
-                    </span>
-                  )}
-                </>
+            <div key={item.id}>
+              <button
+                disabled={item.comingSoon}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all ${
+                  isActive
+                    ? 'text-xdex-accent bg-xdex-accent/10 border border-xdex-accent/20'
+                    : item.comingSoon
+                    ? 'text-xdex-text-muted/50 cursor-not-allowed'
+                    : 'text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03]'
+                } ${collapsed ? 'justify-center px-0' : ''}`}
+              >
+                <Icon size={16} strokeWidth={isActive ? 2.2 : 1.6} className="flex-shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="font-medium">{item.label}</span>
+                    {item.comingSoon && (
+                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-xdex-border/40 text-xdex-text-muted">
+                        Soon
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+
+              {/* Sub-links under Alpha Scan */}
+              {isActive && !collapsed && (
+                <div className="ml-7 mb-1 space-y-0.5">
+                  <button
+                    onClick={onAdvertise}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-[12px] rounded-md text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 transition-all"
+                  >
+                    <Zap size={13} strokeWidth={1.8} className="flex-shrink-0" />
+                    <span>Advertise</span>
+                  </button>
+                  <button
+                    onClick={onProfile}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-[12px] rounded-md text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 transition-all"
+                  >
+                    <User size={13} strokeWidth={1.8} className="flex-shrink-0" />
+                    <span>My Boosts</span>
+                  </button>
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>

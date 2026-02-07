@@ -1,7 +1,8 @@
 'use client';
 
-import { Star, ArrowLeftRight, AlertTriangle } from 'lucide-react';
+import { Star, ArrowLeftRight, AlertTriangle, Zap } from 'lucide-react';
 import { TokenPair } from '@/types/token';
+import { ActiveBoost } from '@/types/boost';
 import {
   formatPrice,
   formatUsd,
@@ -18,6 +19,7 @@ interface TokenRowProps {
   onFavorite: (address: string) => void;
   onClick: (token: TokenPair) => void;
   onSwap: (token: TokenPair) => void;
+  boost?: ActiveBoost | null;
 }
 
 // Inline XDEX hexagon X logo (small)
@@ -52,6 +54,7 @@ export default function TokenRow({
   onFavorite,
   onClick,
   onSwap,
+  boost,
 }: TokenRowProps) {
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -69,16 +72,29 @@ export default function TokenRow({
 
   return (
     <tr
-      className="token-row border-b border-xdex-border/50 cursor-pointer"
+      className={`token-row border-b border-xdex-border/50 cursor-pointer ${
+        boost?.tierConfig.hasGlow ? 'boosted-row' : ''
+      }`}
       onClick={() => onClick(token)}
+      style={boost?.tierConfig.hasGlow ? { '--boost-color': boost.tierConfig.color } as React.CSSProperties : undefined}
     >
-      {/* Token info: rank | XDEX logo | swap | star | image | symbol/pair | name */}
+      {/* Token info: rank | boost | XDEX logo | swap | star | image | symbol/pair | name */}
       <td className="px-3 py-3">
         <div className="flex items-center gap-2">
           {/* Rank number */}
           <span className="text-[11px] text-xdex-text-muted font-mono w-5 text-right flex-shrink-0">
             {rank}
           </span>
+
+          {/* Boost indicator */}
+          {boost && (
+            <span
+              className="flex-shrink-0"
+              title={`${boost.tierConfig.name} — Boosted`}
+            >
+              <Zap size={13} style={{ color: boost.tierConfig.color }} fill={boost.tierConfig.color} />
+            </span>
+          )}
 
           {/* XDEX logo */}
           <XdexMark />
