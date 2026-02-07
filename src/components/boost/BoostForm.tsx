@@ -7,9 +7,6 @@ import {
   Upload,
   ChevronRight,
   Check,
-  Flame,
-  TrendingUp,
-  Sparkles,
   AlertTriangle,
   ExternalLink,
   ImageIcon,
@@ -32,11 +29,17 @@ interface BoostFormProps {
   preselectedToken?: TokenPair;
 }
 
-const tierIcons: Record<BoostTier, React.ComponentType<any>> = {
-  ignite: Flame,
-  surge: TrendingUp,
-  supernova: Sparkles,
-};
+/** Renders 1, 2, or 3 neon yellow lightning bolts */
+function BoltIcon({ count, size = 18 }: { count: number; size?: number }) {
+  const boltSize = count === 1 ? size : size - 2;
+  return (
+    <span className="inline-flex items-center" style={{ gap: count > 1 ? '-4px' : '0' }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <Zap key={i} size={boltSize} fill="#DFFF00" color="#DFFF00" style={{ marginLeft: i > 0 ? -4 : 0 }} />
+      ))}
+    </span>
+  );
+}
 
 export default function BoostForm({
   tokens,
@@ -51,7 +54,7 @@ export default function BoostForm({
   const [selectedToken, setSelectedToken] = useState<TokenPair | null>(
     preselectedToken ?? null,
   );
-  const [selectedTier, setSelectedTier] = useState<BoostTier>('surge');
+  const [selectedTier, setSelectedTier] = useState<BoostTier>('giga');
   const [tokenSearch, setTokenSearch] = useState('');
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -251,7 +254,6 @@ export default function BoostForm({
               <div className="space-y-3">
                 {(Object.entries(BOOST_TIERS) as [BoostTier, BoostTierConfig][]).map(
                   ([tierId, config]) => {
-                    const TierIcon = tierIcons[tierId];
                     const isSelected = selectedTier === tierId;
                     const price =
                       paymentCurrency === 'XNT' ? config.priceXNT : config.priceSOL;
@@ -277,7 +279,7 @@ export default function BoostForm({
                             className="p-2 rounded-lg flex-shrink-0"
                             style={{ backgroundColor: `${config.color}15` }}
                           >
-                            <TierIcon size={20} style={{ color: config.color }} />
+                            <BoltIcon count={config.boltCount} size={20} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
@@ -589,7 +591,7 @@ export default function BoostForm({
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
                 style={{ backgroundColor: `${tierConfig.color}20` }}
               >
-                <Zap size={28} style={{ color: tierConfig.color }} />
+                <BoltIcon count={tierConfig.boltCount} size={28} />
               </div>
               <div>
                 <h4 className="text-lg font-bold text-white mb-1">Boost Activated!</h4>

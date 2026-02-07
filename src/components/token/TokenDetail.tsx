@@ -14,6 +14,7 @@ import {
   Wallet,
   RefreshCw,
   Clock,
+  Zap,
 } from 'lucide-react';
 import { TokenPair, OHLCVData } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
@@ -512,7 +513,7 @@ export default function TokenDetail({
 
         {/* RIGHT: Token info panel */}
         <div className="w-[380px] flex-shrink-0 overflow-y-auto">
-          {/* Boost banner (Diamond tier) */}
+          {/* Boost banner (Degen Boost tier) */}
           {boost?.bannerImageUrl && (
             <div className="relative">
               <img
@@ -522,11 +523,11 @@ export default function TokenDetail({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
-                <span
-                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
-                  style={{ color: boost.tierConfig.color, backgroundColor: `${boost.tierConfig.color}20` }}
-                >
-                  {boost.tierConfig.name}
+                <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-black/40">
+                  {Array.from({ length: boost.tierConfig.boltCount }).map((_, i) => (
+                    <Zap key={i} size={9} fill="#DFFF00" color="#DFFF00" style={{ marginLeft: i > 0 ? -3 : 0 }} />
+                  ))}
+                  <span style={{ color: '#DFFF00' }}>{boost.tierConfig.name}</span>
                 </span>
               </div>
             </div>
@@ -536,10 +537,13 @@ export default function TokenDetail({
           {boost && !boost.bannerImageUrl && (
             <div
               className="flex items-center gap-2 px-5 py-2 border-b"
-              style={{ borderColor: `${boost.tierConfig.color}30`, backgroundColor: `${boost.tierConfig.color}08` }}
+              style={{ borderColor: '#DFFF0030', backgroundColor: '#DFFF0008' }}
             >
-              <span style={{ color: boost.tierConfig.color }} className="text-[10px] font-semibold">
-                &#9889; {boost.tierConfig.name}
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold">
+                {Array.from({ length: boost.tierConfig.boltCount }).map((_, i) => (
+                  <Zap key={i} size={10} fill="#DFFF00" color="#DFFF00" style={{ marginLeft: i > 0 ? -3 : 0 }} />
+                ))}
+                <span style={{ color: '#DFFF00' }}>{boost.tierConfig.name}</span>
               </span>
               <span className="text-[9px] text-xdex-text-muted">Promoted</span>
             </div>

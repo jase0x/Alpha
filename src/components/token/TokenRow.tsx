@@ -86,13 +86,15 @@ export default function TokenRow({
             {rank}
           </span>
 
-          {/* Boost indicator */}
+          {/* Boost indicator — neon yellow bolts (1/2/3 per tier) */}
           {boost && (
             <span
-              className="flex-shrink-0"
-              title={`${boost.tierConfig.name} — Boosted`}
+              className="inline-flex items-center flex-shrink-0"
+              title={`${boost.tierConfig.name}`}
             >
-              <Zap size={13} style={{ color: boost.tierConfig.color }} fill={boost.tierConfig.color} />
+              {Array.from({ length: boost.tierConfig.boltCount }).map((_, i) => (
+                <Zap key={i} size={11} fill="#DFFF00" color="#DFFF00" style={{ marginLeft: i > 0 ? -3 : 0 }} />
+              ))}
             </span>
           )}
 

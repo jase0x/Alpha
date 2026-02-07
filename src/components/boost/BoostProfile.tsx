@@ -9,9 +9,6 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
-  Flame,
-  TrendingUp,
-  Sparkles,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -27,11 +24,17 @@ interface BoostProfileProps {
   onNewBoost: () => void;
 }
 
-const tierIcons: Record<BoostTier, React.ComponentType<any>> = {
-  ignite: Flame,
-  surge: TrendingUp,
-  supernova: Sparkles,
-};
+/** Renders 1, 2, or 3 neon yellow lightning bolts */
+function BoltIcon({ count, size = 18 }: { count: number; size?: number }) {
+  const boltSize = count === 1 ? size : size - 2;
+  return (
+    <span className="inline-flex items-center">
+      {Array.from({ length: count }).map((_, i) => (
+        <Zap key={i} size={boltSize} fill="#DFFF00" color="#DFFF00" style={{ marginLeft: i > 0 ? -4 : 0 }} />
+      ))}
+    </span>
+  );
+}
 
 const statusConfig: Record<
   string,
@@ -196,7 +199,6 @@ export default function BoostProfile({ onClose, onNewBoost }: BoostProfileProps)
             <div className="space-y-2 pt-1">
               {filteredOrders.map((order) => {
                 const config = BOOST_TIERS[order.tier];
-                const TierIcon = tierIcons[order.tier];
                 const status = statusConfig[order.status];
                 const StatusIcon = status.icon;
 
@@ -210,12 +212,12 @@ export default function BoostProfile({ onClose, onNewBoost }: BoostProfileProps)
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      {/* Tier icon */}
+                      {/* Tier icon — neon yellow bolts */}
                       <div
                         className="p-2 rounded-lg flex-shrink-0"
                         style={{ backgroundColor: `${config.color}15` }}
                       >
-                        <TierIcon size={18} style={{ color: config.color }} />
+                        <BoltIcon count={config.boltCount} size={18} />
                       </div>
 
                       {/* Main info */}

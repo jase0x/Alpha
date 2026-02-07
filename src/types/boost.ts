@@ -4,7 +4,7 @@ import { Chain } from './token';
 // Boost Tiers
 // ============================================================
 
-export type BoostTier = 'ignite' | 'surge' | 'supernova';
+export type BoostTier = 'boost' | 'giga' | 'degen';
 
 export interface BoostTierConfig {
   id: BoostTier;
@@ -16,6 +16,7 @@ export interface BoostTierConfig {
   features: string[];
   color: string;
   iconColor: string;
+  boltCount: number;   // number of lightning bolt icons (1, 2, or 3)
   rankBoost: number;   // how many positions up in the list
   hasBanner: boolean;  // can show custom banner image in detail
   hasGlow: boolean;    // glowing row effect in table
@@ -23,34 +24,35 @@ export interface BoostTierConfig {
 }
 
 export const BOOST_TIERS: Record<BoostTier, BoostTierConfig> = {
-  ignite: {
-    id: 'ignite',
-    name: 'Ignite',
-    description: 'Spark visibility for your token',
+  boost: {
+    id: 'boost',
+    name: 'Boost',
+    description: 'Get your token noticed',
     durationDays: 3,
     priceXNT: 25,
     priceSOL: 2,
     features: [
-      'Boost icon next to token',
+      '⚡ Lightning bolt badge',
       'Rank +10 positions',
       '3-day duration',
     ],
     color: '#f97316',
     iconColor: 'text-orange-500',
+    boltCount: 1,
     rankBoost: 10,
     hasBanner: false,
     hasGlow: false,
     hasTrending: false,
   },
-  surge: {
-    id: 'surge',
-    name: 'Surge',
+  giga: {
+    id: 'giga',
+    name: 'Giga Boost',
     description: 'Amplify momentum & trending visibility',
     durationDays: 7,
     priceXNT: 100,
     priceSOL: 8,
     features: [
-      'Surge icon next to token',
+      '⚡⚡ Double bolt badge',
       'Rank +25 positions',
       'Appears in trending bar',
       'Highlighted row glow',
@@ -58,20 +60,21 @@ export const BOOST_TIERS: Record<BoostTier, BoostTierConfig> = {
     ],
     color: '#a855f7',
     iconColor: 'text-purple-500',
+    boltCount: 2,
     rankBoost: 25,
     hasBanner: false,
     hasGlow: true,
     hasTrending: true,
   },
-  supernova: {
-    id: 'supernova',
-    name: 'Supernova',
-    description: 'Maximum visibility & custom banner',
+  degen: {
+    id: 'degen',
+    name: 'Degen Boost',
+    description: 'Maximum degen visibility & custom banner',
     durationDays: 14,
     priceXNT: 250,
     priceSOL: 20,
     features: [
-      'Supernova icon next to token',
+      '⚡⚡⚡ Triple bolt badge',
       'Rank +50 positions (top priority)',
       'Appears in trending bar (priority)',
       'Custom banner image in token detail',
@@ -80,6 +83,7 @@ export const BOOST_TIERS: Record<BoostTier, BoostTierConfig> = {
     ],
     color: '#06b6d4',
     iconColor: 'text-cyan-400',
+    boltCount: 3,
     rankBoost: 50,
     hasBanner: true,
     hasGlow: true,
