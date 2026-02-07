@@ -166,8 +166,19 @@ export default function TokenDetail({
     txns7d: number;
   } | null>(null);
 
+  // Sync liveToken when token prop changes (user selects different token)
+  useEffect(() => {
+    setLiveToken(token);
+    setExtendedData(null);
+  }, [token.address]);
+
   // Sentiment state
   const [sentiment, setSentiment] = useState(() => getSentiment(token.address));
+
+  // Re-sync sentiment when token changes
+  useEffect(() => {
+    setSentiment(getSentiment(token.address));
+  }, [token.address]);
 
   // Alert state
   const [tokenAlerts, setTokenAlerts] = useState<PriceAlert[]>(() => getAlertsForToken(token.address));
@@ -175,31 +186,47 @@ export default function TokenDetail({
   const [alertPrice, setAlertPrice] = useState('');
   const [showAlertForm, setShowAlertForm] = useState(false);
 
+  // Re-sync alerts when token changes
+  useEffect(() => {
+    setTokenAlerts(getAlertsForToken(token.address));
+    setAlertPrice('');
+    setShowAlertForm(false);
+  }, [token.address]);
+
   // Share state
   const [shareCopied, setShareCopied] = useState(false);
 
-  // Fetch real chart data
+  // Fetch real chart data (with stale-request guard)
   useEffect(() => {
+    let cancelled = false;
     setChartLoading(true);
     fetchOHLCV(token, chartTimeframe).then((data) => {
-      setChartData(data);
-      setChartLoading(false);
+      if (!cancelled) {
+        setChartData(data);
+        setChartLoading(false);
+      }
     });
+    return () => { cancelled = true; };
   }, [token.address, chartTimeframe, token.chain]);
 
-  // Fetch extended pool details
+  // Fetch extended pool details (with stale-request guard)
   useEffect(() => {
-    fetchPoolDetails(token.address, token.chain).then(setExtendedData);
+    let cancelled = false;
+    fetchPoolDetails(token.address, token.chain).then((data) => {
+      if (!cancelled) setExtendedData(data);
+    });
+    return () => { cancelled = true; };
   }, [token.address, token.chain]);
 
-  // Auto-refresh live data every 30s
+  // Auto-refresh live data every 30s (with stale-request guard)
   useEffect(() => {
+    let cancelled = false;
     const refresh = async () => {
       const updated = await fetchPoolDetail(token.address, token.chain);
-      if (updated) setLiveToken(updated);
+      if (updated && !cancelled) setLiveToken(updated);
     };
     const interval = setInterval(refresh, 30000);
-    return () => clearInterval(interval);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [token.address, token.chain]);
 
   const refreshData = useCallback(async () => {

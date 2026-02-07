@@ -31,11 +31,12 @@ export function formatCompact(value: number): string {
 
 export function formatUsd(value: number): string {
   if (value === 0) return '$0';
+  const sign = value < 0 ? '-' : '';
   const absVal = Math.abs(value);
-  if (absVal >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-  if (absVal >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-  if (absVal >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
-  return `$${value.toFixed(2)}`;
+  if (absVal >= 1e9) return `${sign}$${(absVal / 1e9).toFixed(2)}B`;
+  if (absVal >= 1e6) return `${sign}$${(absVal / 1e6).toFixed(2)}M`;
+  if (absVal >= 1e3) return `${sign}$${(absVal / 1e3).toFixed(1)}K`;
+  return `${sign}$${absVal.toFixed(2)}`;
 }
 
 export function formatPercent(value: number): string {

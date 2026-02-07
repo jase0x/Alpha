@@ -108,10 +108,10 @@ export default function TokenCompare({ tokens, onClose, initialToken }: Props) {
   const bestIdx = useMemo(() => {
     if (selected.length < 2) return new Map<number, number>();
     const map = new Map<number, number>();
-    // For these metrics, higher is better (except rug risk, age)
-    const higherBetter = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13];
-    const lowerBetter = [12]; // rug risk
-    // age: older is generally better (higher createdAt = newer, so lower timestamp = older)
+    // For these metrics, higher is better
+    const higherBetter = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 14];
+    // For these metrics, lower is better (rug risk, age — lower createdAt = older = better)
+    const lowerBetter = [10, 12];
 
     for (const mi of higherBetter) {
       let bestI = 0;

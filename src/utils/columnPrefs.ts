@@ -38,6 +38,14 @@ export function saveVisibleColumns(cols: Set<ColumnId>): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...cols]));
 }
 
+function csvEscape(value: unknown): string {
+  const str = String(value ?? '');
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
 export function exportTokensCSV(tokens: TokenPair[]): string {
   const headers = [
     'Symbol', 'Name', 'Address', 'Chain', 'Price (USD)', 'Price Change 5m',
@@ -46,8 +54,8 @@ export function exportTokensCSV(tokens: TokenPair[]): string {
   ];
 
   const rows = tokens.map((t) => [
-    t.baseToken.symbol,
-    t.baseToken.name,
+    csvEscape(t.baseToken.symbol),
+    csvEscape(t.baseToken.name),
     t.address,
     t.chain,
     t.priceUsd,

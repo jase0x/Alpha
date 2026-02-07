@@ -29,7 +29,7 @@ export function getSentiment(tokenAddress: string): { bullish: number; bearish: 
   return data[tokenAddress] || { bullish: 0, bearish: 0 };
 }
 
-export function vote(tokenAddress: string, sentiment: Sentiment): { bullish: number; bearish: number; userVote: Sentiment } {
+export function vote(tokenAddress: string, sentiment: Sentiment): { bullish: number; bearish: number; userVote?: Sentiment } {
   const data = load();
   const entry = data[tokenAddress] || { bullish: 0, bearish: 0 };
 
@@ -51,7 +51,7 @@ export function vote(tokenAddress: string, sentiment: Sentiment): { bullish: num
 
   data[tokenAddress] = entry;
   save(data);
-  return { ...entry, userVote: entry.userVote! };
+  return { bullish: entry.bullish, bearish: entry.bearish, userVote: entry.userVote };
 }
 
 /**
