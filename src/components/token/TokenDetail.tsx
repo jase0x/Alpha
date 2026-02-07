@@ -24,7 +24,7 @@ import {
   getChainColor,
 } from '@/utils/format';
 import PriceChart from '@/components/chart/PriceChart';
-import DegenLogo from '@/components/ui/DegenLogo';
+import AlphaLogo from '@/components/ui/AlphaLogo';
 
 interface TokenDetailProps {
   token: TokenPair;
@@ -630,9 +630,8 @@ export default function TokenDetail({
               </a>
             </div>
 
-            <div className="flex items-center justify-center gap-1.5 mt-4 pt-3 border-t border-xdex-border/40">
-              <DegenLogo size={14} color="#555" />
-              <span className="text-[10px] text-xdex-text-muted">Powered by Degen Screener</span>
+            <div className="flex items-center justify-center mt-4 pt-3 border-t border-xdex-border/40">
+              <AlphaLogo size={12} />
             </div>
           </div>
         </div>

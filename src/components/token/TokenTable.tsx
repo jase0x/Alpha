@@ -14,7 +14,7 @@ interface TokenTableProps {
 }
 
 interface ColumnDef {
-  key: SortField | 'token' | 'rank';
+  key: SortField | 'token' | 'swap';
   label: string;
   align: 'left' | 'right' | 'center';
   width?: string;
@@ -22,8 +22,7 @@ interface ColumnDef {
 }
 
 const columns: ColumnDef[] = [
-  { key: 'rank', label: '#', align: 'center', width: 'w-10', sortable: false },
-  { key: 'token', label: 'TOKEN', align: 'left', width: 'w-[220px]', sortable: false },
+  { key: 'token', label: 'TOKEN', align: 'left', width: 'w-[280px]', sortable: false },
   { key: 'price', label: 'PRICE', align: 'right', width: 'w-[100px]', sortable: true },
   { key: 'age', label: 'AGE', align: 'right', width: 'w-[60px]', sortable: true },
   { key: 'txns', label: 'TXNS', align: 'right', width: 'w-[80px]', sortable: true },
@@ -35,7 +34,7 @@ const columns: ColumnDef[] = [
   { key: 'priceChange24h', label: '24H', align: 'right', width: 'w-[70px]', sortable: true },
   { key: 'liquidity', label: 'LIQUIDITY', align: 'right', width: 'w-[90px]', sortable: true },
   { key: 'marketCap', label: 'MCAP', align: 'right', width: 'w-[100px]', sortable: true },
-  { key: 'rank', label: '', align: 'center', width: 'w-10', sortable: false },
+  { key: 'swap', label: '', align: 'center', width: 'w-10', sortable: false },
 ];
 
 function getSortValue(token: TokenPair, field: SortField): number {
@@ -66,7 +65,7 @@ export default function TokenTable({
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
 
   const handleSort = (field: string) => {
-    if (field === 'token' || field === 'rank') return;
+    if (field === 'token' || field === 'swap') return;
     const sf = field as SortField;
     if (sortField === sf) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');

@@ -12,7 +12,7 @@ import SearchModal from '@/components/ui/SearchModal';
 import X1Logo from '@/components/ui/X1Logo';
 import SolanaLogo from '@/components/ui/SolanaLogo';
 
-export default function DegenPage() {
+export default function AlphaPage() {
   // Separate data stores for each chain
   const [x1Tokens, setX1Tokens] = useState<TokenPair[]>([]);
   const [solanaTokens, setSolanaTokens] = useState<TokenPair[]>([]);
@@ -79,7 +79,7 @@ export default function DegenPage() {
 
   // Load favorites from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('degen-favorites');
+    const saved = localStorage.getItem('alpha-favorites');
     if (saved) {
       try {
         setFavorites(new Set(JSON.parse(saved)));
@@ -110,7 +110,7 @@ export default function DegenPage() {
       } else {
         next.add(address);
       }
-      localStorage.setItem('degen-favorites', JSON.stringify([...next]));
+      localStorage.setItem('alpha-favorites', JSON.stringify([...next]));
       return next;
     });
   }, []);

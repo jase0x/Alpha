@@ -9,8 +9,6 @@ import {
   formatPercent,
   formatAge,
   getPercentColor,
-  getChainColor,
-  getChainLabel,
 } from '@/utils/format';
 
 interface TokenRowProps {
@@ -20,6 +18,21 @@ interface TokenRowProps {
   onFavorite: (address: string) => void;
   onClick: (token: TokenPair) => void;
   onSwap: (token: TokenPair) => void;
+}
+
+// Inline XDEX logo mark (small, 14px)
+function XdexMark() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 100 100" fill="none" className="flex-shrink-0">
+      <defs>
+        <linearGradient id="xdex-row" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#00BFFF" />
+          <stop offset="100%" stopColor="#0566ea" />
+        </linearGradient>
+      </defs>
+      <path d="M18 22L38 50L18 78H30L44 58L58 78H70L50 50L70 22H58L44 42L30 22H18Z" fill="url(#xdex-row)" />
+    </svg>
+  );
 }
 
 export default function TokenRow({
@@ -45,14 +58,18 @@ export default function TokenRow({
       className="token-row border-b border-xdex-border/50 cursor-pointer"
       onClick={() => onClick(token)}
     >
-      {/* Rank */}
-      <td className="px-3 py-3 text-center">
-        <span className="text-xs text-xdex-text-muted">#{rank}</span>
-      </td>
-
-      {/* Token info */}
+      {/* Token info: rank | XDEX logo | image | symbol/pair | name */}
       <td className="px-3 py-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Rank number */}
+          <span className="text-[11px] text-xdex-text-muted font-mono w-5 text-right flex-shrink-0">
+            {rank}
+          </span>
+
+          {/* XDEX logo */}
+          <XdexMark />
+
+          {/* Favorite star */}
           <button
             onClick={handleFavorite}
             className={`star-btn flex-shrink-0 ${isFavorited ? 'favorited' : 'text-xdex-text-muted'}`}
@@ -80,12 +97,13 @@ export default function TokenRow({
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <span className="font-semibold text-sm text-white truncate">
                 {token.baseToken.symbol}
               </span>
-              <span className={`chain-badge ${getChainColor(token.chain)}`}>
-                {getChainLabel(token.chain)}
+              <span className="text-xdex-text-muted text-xs">/</span>
+              <span className="text-xs text-xdex-text-muted truncate">
+                {token.quoteToken.symbol}
               </span>
               {token.isVerified && (
                 <span className="text-xdex-accent text-[10px]" title="Verified">

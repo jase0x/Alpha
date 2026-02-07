@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { FilterView } from '@/types/token';
-import DegenLogo from '@/components/ui/DegenLogo';
+import AlphaLogo from '@/components/ui/AlphaLogo';
 
 interface SidebarProps {
   activeView: FilterView;
@@ -55,11 +55,8 @@ export default function Sidebar({
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-3 h-14 border-b border-xdex-border">
-        <DegenLogo size={collapsed ? 26 : 30} color="#ffffff" />
-        {!collapsed && (
-          <span className="text-base font-bold text-white tracking-tight">Degen</span>
-        )}
+      <div className="flex items-center px-3 h-14 border-b border-xdex-border">
+        <AlphaLogo size={collapsed ? 26 : 30} collapsed={collapsed} />
       </div>
 
       {/* Search */}
@@ -126,15 +123,18 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Degen LaunchPad button */}
+      {/* Alpha LaunchPad button */}
       <div className="px-3 pb-3">
         <button
           className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
-          <DegenLogo size={18} color="#ffffff" />
-          {!collapsed && <span>Degen LaunchPad</span>}
+          {collapsed ? (
+            <svg width={18} height={18} viewBox="0 0 40 40" fill="none"><text x="20" y="30" textAnchor="middle" fill="white" fontSize="28" fontWeight="800" fontFamily="system-ui, sans-serif">A</text></svg>
+          ) : (
+            <span>Alpha LaunchPad</span>
+          )}
         </button>
       </div>
 
