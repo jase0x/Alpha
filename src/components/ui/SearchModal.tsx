@@ -1,42 +1,24 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, TrendingUp } from 'lucide-react';
 import { TokenPair } from '@/types/token';
 import { searchTokens } from '@/services/api';
-import { formatPrice, formatPercent, getPercentColor, getChainLabel, getChainColor } from '@/utils/format';
+import { formatPrice, formatUsd, getChainLabel, getChainColor } from '@/utils/format';
 
 interface SearchModalProps {
   onClose: () => void;
   onSelect: (token: TokenPair) => void;
-  recentTokens: TokenPair[];
+  allTokens: TokenPair[];
 }
 
-export default function SearchModal({ onClose, onSelect, recentTokens }: SearchModalProps) {
+export default function SearchModal({ onClose, onSelect, allTokens }: SearchModalProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<TokenPair[]>([]);
-  const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-
-    const timeout = setTimeout(async () => {
-      setLoading(true);
-      const tokens = await searchTokens(query);
-      setResults(tokens);
-      setLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [query]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -46,7 +28,26 @@ export default function SearchModal({ onClose, onSelect, recentTokens }: SearchM
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const displayTokens = query ? results : recentTokens.slice(0, 8);
+  const results = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase().trim();
+    return allTokens.filter(
+      (p) =>
+        p.baseToken.symbol.toLowerCase().includes(q) ||
+        p.baseToken.name.toLowerCase().includes(q) ||
+        p.quoteToken.symbol.toLowerCase().includes(q) ||
+        p.address.toLowerCase().includes(q),
+    );
+  }, [query, allTokens]);
+
+  // Show top tokens by liquidity when no query
+  const trending = useMemo(() => {
+    return [...allTokens]
+      .sort((a, b) => b.liquidity - a.liquidity)
+      .slice(0, 10);
+  }, [allTokens]);
+
+  const displayTokens = query ? results : trending;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-24">
@@ -82,7 +83,7 @@ export default function SearchModal({ onClose, onSelect, recentTokens }: SearchM
           {!query && displayTokens.length > 0 && (
             <div className="px-4 py-2">
               <span className="text-[10px] uppercase tracking-widest text-xdex-text-muted font-semibold flex items-center gap-1.5">
-                <TrendingUp size={10} /> Trending
+                <TrendingUp size={10} /> Top by Liquidity
               </span>
             </div>
           )}
@@ -96,7 +97,18 @@ export default function SearchModal({ onClose, onSelect, recentTokens }: SearchM
               }}
               className="flex items-center gap-3 w-full px-4 py-3 hover:bg-xdex-hover transition-colors text-left"
             >
-              <div className="w-8 h-8 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center flex-shrink-0">
+              {token.baseToken.imageUrl ? (
+                <img
+                  src={token.baseToken.imageUrl}
+                  alt={token.baseToken.symbol}
+                  className="w-8 h-8 rounded-full bg-xdex-card border border-xdex-border flex-shrink-0"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <div className={`w-8 h-8 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center flex-shrink-0 ${token.baseToken.imageUrl ? 'hidden' : ''}`}>
                 <span className="text-[10px] font-bold text-xdex-accent">
                   {token.baseToken.symbol.charAt(0)}
                 </span>
@@ -121,22 +133,16 @@ export default function SearchModal({ onClose, onSelect, recentTokens }: SearchM
                 <div className="text-sm text-white font-mono">
                   {formatPrice(token.priceUsd)}
                 </div>
-                <div className={`text-xs font-mono ${getPercentColor(token.priceChange24h)}`}>
-                  {formatPercent(token.priceChange24h)}
+                <div className="text-[11px] text-xdex-text-muted font-mono">
+                  TVL {formatUsd(token.liquidity)}
                 </div>
               </div>
             </button>
           ))}
 
-          {query && results.length === 0 && !loading && (
+          {query && results.length === 0 && (
             <div className="py-12 text-center text-xdex-text-muted text-sm">
               No results found for &quot;{query}&quot;
-            </div>
-          )}
-
-          {loading && (
-            <div className="py-12 text-center text-xdex-text-muted text-sm">
-              Searching...
             </div>
           )}
         </div>

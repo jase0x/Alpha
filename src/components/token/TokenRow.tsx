@@ -53,8 +53,20 @@ export default function TokenRow({
             <Star size={14} fill={isFavorited ? 'currentColor' : 'none'} />
           </button>
 
-          {/* Token icon placeholder */}
-          <div className="w-7 h-7 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center flex-shrink-0">
+          {/* Token icon */}
+          {token.baseToken.imageUrl ? (
+            <img
+              src={token.baseToken.imageUrl}
+              alt={token.baseToken.symbol}
+              className="w-7 h-7 rounded-full bg-xdex-card border border-xdex-border flex-shrink-0 object-cover"
+              onError={(e) => {
+                const el = e.target as HTMLImageElement;
+                el.style.display = 'none';
+                el.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`w-7 h-7 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center flex-shrink-0 ${token.baseToken.imageUrl ? 'hidden' : ''}`}>
             <span className="text-[10px] font-bold text-xdex-accent">
               {token.baseToken.symbol.charAt(0)}
             </span>

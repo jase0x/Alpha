@@ -47,8 +47,8 @@ export default function TokenDetail({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetchOHLCV(token.address, chartTimeframe).then(setChartData);
-  }, [token.address, chartTimeframe]);
+    fetchOHLCV(token.address, chartTimeframe, token.priceUsd).then(setChartData);
+  }, [token.address, chartTimeframe, token.priceUsd]);
 
   const copyAddress = () => {
     navigator.clipboard.writeText(token.baseToken.address);
