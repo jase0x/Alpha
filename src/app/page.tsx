@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search } from 'lucide-react';
+import {
+  Search,
+  Flame,
+  TrendingUp,
+  TrendingDown,
+  Bookmark,
+  Layers,
+} from 'lucide-react';
 import { TokenPair, FilterView, TimeFilter, Chain } from '@/types/token';
 import { fetchPoolList } from '@/services/api';
 import Sidebar from '@/components/layout/Sidebar';
@@ -11,6 +18,44 @@ import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
 import X1Logo from '@/components/ui/X1Logo';
 import SolanaLogo from '@/components/ui/SolanaLogo';
+
+// XDEX hexagon X logo mark (small, for title bar)
+function XdexMark({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 200 200" fill="none">
+      <defs>
+        <linearGradient id="xdex-title-mark" x1="50" y1="0" x2="150" y2="200" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#00BFFF" />
+          <stop offset="100%" stopColor="#0566ea" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M100 10 L180 55 L180 145 L100 190 L20 145 L20 55 Z"
+        stroke="url(#xdex-title-mark)"
+        strokeWidth="14"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M62 65 L82 100 L62 135 H80 L100 108 L120 135 H138 L118 100 L138 65 H120 L100 92 L80 65 Z"
+        fill="url(#xdex-title-mark)"
+      />
+    </svg>
+  );
+}
+
+const filterTabs: {
+  id: FilterView;
+  label: string;
+  icon: React.ComponentType<any>;
+  activeColor: string;
+}[] = [
+  { id: 'all', label: 'All Pairs', icon: Layers, activeColor: 'text-xdex-accent border-xdex-accent' },
+  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-orange-400 border-orange-400' },
+  { id: 'gainers', label: 'Gainers', icon: TrendingUp, activeColor: 'text-xdex-green border-xdex-green' },
+  { id: 'losers', label: 'Losers', icon: TrendingDown, activeColor: 'text-xdex-red border-xdex-red' },
+  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-yellow-400 border-yellow-400' },
+];
 
 export default function AlphaPage() {
   // Separate data stores for each chain
@@ -178,12 +223,7 @@ export default function AlphaPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-xdex-bg">
       {/* Sidebar */}
-      <Sidebar
-        activeView={activeView}
-        onViewChange={setActiveView}
-        onSearchOpen={() => searchInputRef.current?.focus()}
-        pairCounts={pairCounts}
-      />
+      <Sidebar />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -198,21 +238,58 @@ export default function AlphaPage() {
           }}
         />
 
-        {/* View title bar with search and chain toggle */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-xdex-border bg-xdex-bg">
+        {/* Title bar: XDEX logo | Alpha | LIVE | filters | search | chain toggle */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-border bg-xdex-bg">
+          {/* Left: XDEX mark + Alpha + LIVE */}
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold text-white capitalize">
-              {activeView === 'all' ? 'All Pairs' : activeView === 'new' ? 'New Pairs' : activeView}
-            </h2>
-            <span className="text-xs text-xdex-text-muted">
-              {filteredTokens.length} pairs
-            </span>
-            <div className="flex items-center gap-1 ml-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-xdex-green live-dot" />
-              <span className="text-[10px] text-xdex-green">LIVE</span>
+            <div className="flex items-center gap-1.5">
+              <XdexMark size={20} />
+              <span className="text-sm font-bold text-white tracking-tight">Alpha</span>
             </div>
+            <div className="flex items-center gap-1 ml-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-xdex-green live-dot" />
+              <span className="text-[10px] text-xdex-green font-medium">LIVE</span>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-xdex-border/60 mx-1" />
+
+            {/* Filter tabs */}
+            <div className="flex items-center gap-0.5">
+              {filterTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeView === tab.id;
+                const count = pairCounts[tab.id];
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveView(tab.id)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-all ${
+                      isActive
+                        ? `${tab.activeColor} bg-white/5 border-b-2`
+                        : 'text-xdex-text-muted hover:text-xdex-text hover:bg-white/[0.03] border-b-2 border-transparent'
+                    }`}
+                  >
+                    <Icon size={12} strokeWidth={isActive ? 2.2 : 1.6} />
+                    <span>{tab.label}</span>
+                    {count > 0 && (
+                      <span className={`text-[9px] px-1 py-0.5 rounded-full ${
+                        isActive ? 'bg-white/10' : 'bg-xdex-border/40'
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right: Search + Chain toggle */}
+          <div className="flex items-center gap-3">
             {/* Inline search */}
-            <div className="flex items-center gap-1.5 ml-3 px-2.5 py-1.5 rounded-lg bg-xdex-card border border-xdex-border/50 focus-within:border-xdex-accent/40 transition-colors">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-xdex-card border border-xdex-border/50 focus-within:border-xdex-accent/40 transition-colors">
               <Search size={12} className="text-xdex-text-muted flex-shrink-0" />
               <input
                 ref={searchInputRef}
@@ -220,7 +297,7 @@ export default function AlphaPage() {
                 placeholder="Search tokens..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-xs text-white placeholder:text-xdex-text-muted outline-none w-32 focus:w-48 transition-all"
+                className="bg-transparent text-xs text-white placeholder:text-xdex-text-muted outline-none w-28 focus:w-40 transition-all"
               />
               {searchQuery && (
                 <button
@@ -231,42 +308,42 @@ export default function AlphaPage() {
                 </button>
               )}
             </div>
-          </div>
 
-          {/* Chain toggle */}
-          <div className="flex items-center gap-1 bg-xdex-card/50 rounded-lg p-0.5 border border-xdex-border/50">
-            <button
-              onClick={() => setActiveChain('x1')}
-              className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
-                activeChain === 'x1'
-                  ? 'bg-xdex-accent/15 text-xdex-accent'
-                  : 'text-xdex-text-muted hover:text-xdex-text'
-              }`}
-            >
-              <X1Logo size={16} />
-              X1
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
-              }`}>
-                {x1Tokens.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveChain('solana')}
-              className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
-                activeChain === 'solana'
-                  ? 'bg-xdex-accent/15 text-xdex-accent'
-                  : 'text-xdex-text-muted hover:text-xdex-text'
-              }`}
-            >
-              <SolanaLogo size={16} />
-              Solana
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
-              }`}>
-                {solanaTokens.length}
-              </span>
-            </button>
+            {/* Chain toggle */}
+            <div className="flex items-center gap-1 bg-xdex-card/50 rounded-lg p-0.5 border border-xdex-border/50">
+              <button
+                onClick={() => setActiveChain('x1')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  activeChain === 'x1'
+                    ? 'bg-xdex-accent/15 text-xdex-accent'
+                    : 'text-xdex-text-muted hover:text-xdex-text'
+                }`}
+              >
+                <X1Logo size={14} />
+                X1
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
+                }`}>
+                  {x1Tokens.length}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveChain('solana')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  activeChain === 'solana'
+                    ? 'bg-xdex-accent/15 text-xdex-accent'
+                    : 'text-xdex-text-muted hover:text-xdex-text'
+                }`}
+              >
+                <SolanaLogo size={14} />
+                Solana
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
+                }`}>
+                  {solanaTokens.length}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -325,8 +402,6 @@ export default function AlphaPage() {
           onClose={() => setSwapToken(null)}
         />
       )}
-
-      {/* Search now inline — no modal needed */}
     </div>
   );
 }

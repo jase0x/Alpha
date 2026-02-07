@@ -35,46 +35,25 @@ function XdexHexLogo({ size }: { size: number }) {
 
 export default function AlphaLogo({ size = 30, className = '', collapsed = false }: AlphaLogoProps) {
   if (collapsed) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 40 40"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className={className}
-      >
-        <text
-          x="20"
-          y="30"
-          textAnchor="middle"
-          fill="white"
-          fontSize="30"
-          fontWeight="800"
-          fontFamily="system-ui, -apple-system, sans-serif"
-        >
-          A
-        </text>
-      </svg>
-    );
+    return <XdexHexLogo size={size} />;
   }
 
-  // Full logo: "ALPHA" in white + "by" in grey + XDEX hexagon logo
+  // Full logo: XDEX hex logo + "XDEX" + "Alpha Scan"
   return (
     <div className={`flex items-center gap-1.5 ${className}`} style={{ height: size }}>
+      <XdexHexLogo size={Math.round(size * 0.7)} />
       <span
-        style={{ fontSize: size * 0.6, lineHeight: 1 }}
-        className="font-extrabold text-white tracking-tight"
+        style={{ fontSize: size * 0.45, lineHeight: 1 }}
+        className="font-bold text-white tracking-tight"
       >
-        ALPHA
+        XDEX
       </span>
       <span
-        style={{ fontSize: size * 0.33, lineHeight: 1 }}
+        style={{ fontSize: size * 0.35, lineHeight: 1 }}
         className="text-xdex-text-muted font-normal"
       >
-        by
+        Alpha Scan
       </span>
-      <XdexHexLogo size={Math.round(size * 0.7)} />
     </div>
   );
 }

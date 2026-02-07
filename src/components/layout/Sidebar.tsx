@@ -2,52 +2,74 @@
 
 import { useState } from 'react';
 import {
-  Search,
-  Flame,
-  TrendingUp,
-  TrendingDown,
-  Bookmark,
-  Layers,
+  ArrowLeftRight,
+  Droplets,
+  Sprout,
+  Shield,
+  ScanSearch,
+  Landmark,
+  Vote,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
-import { FilterView } from '@/types/token';
-import AlphaLogo from '@/components/ui/AlphaLogo';
 import DegenLogo from '@/components/ui/DegenLogo';
 
-interface SidebarProps {
-  activeView: FilterView;
-  onViewChange: (view: FilterView) => void;
-  onSearchOpen: () => void;
-  pairCounts: {
-    all: number;
-    new: number;
-    gainers: number;
-    losers: number;
-    watchlist: number;
-  };
+// XDEX hexagon X logo mark
+function XdexHexLogo({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 200 200" fill="none">
+      <defs>
+        <linearGradient id="xdex-sidebar-logo" x1="50" y1="0" x2="150" y2="200" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#00BFFF" />
+          <stop offset="100%" stopColor="#0566ea" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M100 10 L180 55 L180 145 L100 190 L20 145 L20 55 Z"
+        stroke="url(#xdex-sidebar-logo)"
+        strokeWidth="14"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M62 65 L82 100 L62 135 H80 L100 108 L120 135 H138 L118 100 L138 65 H120 L100 92 L80 65 Z"
+        fill="url(#xdex-sidebar-logo)"
+      />
+    </svg>
+  );
 }
 
-const navItems: {
-  id: FilterView;
+interface SidebarProps {
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
+}
+
+const xdexNavItems: {
+  id: string;
   label: string;
   icon: React.ComponentType<any>;
-  activeColor: string;
+  href: string;
+  isActive?: boolean;
+  isExternal?: boolean;
+  comingSoon?: boolean;
 }[] = [
-  { id: 'all', label: 'All Pairs', icon: Layers, activeColor: 'text-xdex-accent' },
-  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-orange-400' },
-  { id: 'gainers', label: 'Gainers', icon: TrendingUp, activeColor: 'text-xdex-green' },
-  { id: 'losers', label: 'Losers', icon: TrendingDown, activeColor: 'text-xdex-red' },
-  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-yellow-400' },
+  { id: 'swap', label: 'Swap', icon: ArrowLeftRight, href: 'https://app.xdex.xyz/swap', isExternal: true },
+  { id: 'liquidity', label: 'Liquidity', icon: Droplets, href: 'https://app.xdex.xyz/liquidity', isExternal: true },
+  { id: 'farm', label: 'Farm', icon: Sprout, href: 'https://app.xdex.xyz/farm', isExternal: true },
+  { id: 'stake', label: 'Stake', icon: Shield, href: 'https://app.xdex.xyz/stake', isExternal: true },
+  { id: 'alpha', label: 'Alpha Scan', icon: ScanSearch, href: '#', isActive: true },
+  { id: 'lendx', label: 'LendX', icon: Landmark, href: '#', comingSoon: true },
+  { id: 'governance', label: 'Governance', icon: Vote, href: '#', comingSoon: true },
 ];
 
 export default function Sidebar({
-  activeView,
-  onViewChange,
-  onSearchOpen,
-  pairCounts,
+  collapsed: controlledCollapsed,
+  onCollapsedChange,
 }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const collapsed = controlledCollapsed ?? internalCollapsed;
+  const setCollapsed = onCollapsedChange ?? setInternalCollapsed;
 
   return (
     <aside
@@ -55,52 +77,61 @@ export default function Sidebar({
         collapsed ? 'w-14' : 'w-56'
       }`}
     >
-      {/* Logo */}
+      {/* XDEX Logo */}
       <div className="flex items-center px-3 h-14 border-b border-xdex-border">
-        <AlphaLogo size={collapsed ? 26 : 30} collapsed={collapsed} />
-      </div>
-
-      {/* Search */}
-      <div className="px-3 py-3">
-        <button
-          onClick={onSearchOpen}
-          className={`flex items-center gap-2 w-full px-2.5 py-2 rounded-lg bg-xdex-card border border-xdex-border/50 text-xdex-text-muted hover:text-xdex-text hover:border-xdex-border transition-colors ${
-            collapsed ? 'justify-center px-0' : ''
-          }`}
-        >
-          <Search size={14} className="flex-shrink-0" />
+        <div className="flex items-center gap-2">
+          <XdexHexLogo size={collapsed ? 26 : 28} />
           {!collapsed && (
-            <>
-              <span className="text-xs">Search tokens...</span>
-              <span className="ml-auto text-[10px] bg-xdex-border/50 px-1.5 py-0.5 rounded text-xdex-text-muted">/</span>
-            </>
+            <span className="text-white font-bold text-lg tracking-tight">XDEX</span>
           )}
-        </button>
+        </div>
       </div>
 
-      {/* Section label */}
+      {/* XDEX Navigation */}
       {!collapsed && (
-        <div className="px-4 pb-1.5 pt-1">
+        <div className="px-4 pb-1.5 pt-3">
           <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
-            Screener
+            Platform
           </span>
         </div>
       )}
 
-      {/* Navigation */}
-      <nav className="flex-1 px-2">
-        {navItems.map((item) => {
+      <nav className="flex-1 px-2 pt-1">
+        {xdexNavItems.map((item) => {
           const Icon = item.icon;
-          const count = pairCounts[item.id];
-          const isActive = activeView === item.id;
+          const isActive = item.isActive;
+
+          if (item.isExternal) {
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03] ${
+                  collapsed ? 'justify-center px-0' : ''
+                }`}
+              >
+                <Icon size={16} strokeWidth={1.6} className="flex-shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="font-medium">{item.label}</span>
+                    <ExternalLink size={10} className="ml-auto text-xdex-text-muted opacity-50" />
+                  </>
+                )}
+              </a>
+            );
+          }
 
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id)}
+              disabled={item.comingSoon}
               className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all ${
                 isActive
-                  ? `${item.activeColor} bg-white/5`
+                  ? 'text-xdex-accent bg-xdex-accent/10 border border-xdex-accent/20'
+                  : item.comingSoon
+                  ? 'text-xdex-text-muted/50 cursor-not-allowed'
                   : 'text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03]'
               } ${collapsed ? 'justify-center px-0' : ''}`}
             >
@@ -108,13 +139,9 @@ export default function Sidebar({
               {!collapsed && (
                 <>
                   <span className="font-medium">{item.label}</span>
-                  {count > 0 && (
-                    <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full ${
-                      isActive
-                        ? 'bg-white/10'
-                        : 'bg-xdex-border/40 text-xdex-text-muted'
-                    }`}>
-                      {count}
+                  {item.comingSoon && (
+                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-xdex-border/40 text-xdex-text-muted">
+                      Soon
                     </span>
                   )}
                 </>
@@ -126,14 +153,17 @@ export default function Sidebar({
 
       {/* Degen LaunchPad button */}
       <div className="px-3 pb-3">
-        <button
+        <a
+          href="https://app.xdex.xyz/launchpad"
+          target="_blank"
+          rel="noopener noreferrer"
           className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
           <DegenLogo size={18} color="#ffffff" />
           {!collapsed && <span>Degen LaunchPad</span>}
-        </button>
+        </a>
       </div>
 
       {/* Collapse toggle */}
