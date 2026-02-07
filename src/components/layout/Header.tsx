@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Flame, Rocket, TrendingUp, Zap } from 'lucide-react';
-import { formatUsd, formatPrice, formatPercent, formatCompact, getPercentColor } from '@/utils/format';
+import { formatUsd, formatPrice, formatPercent, formatCompact } from '@/utils/format';
 import { TokenPair } from '@/types/token';
 
 interface HeaderProps {
@@ -12,10 +12,17 @@ interface HeaderProps {
   onTimeframeChange: (tf: any) => void;
 }
 
+interface BannerToken {
+  symbol: string;
+  value: string;
+  color: string;
+  imageUrl?: string;
+}
+
 interface BannerItem {
   icon: React.ReactNode;
   label: string;
-  tokens: { symbol: string; value: string; color: string }[];
+  tokens: BannerToken[];
 }
 
 export default function Header({ tokens, allTokens }: HeaderProps) {
@@ -25,27 +32,22 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
   const totalTxns = tokens.reduce((sum, t) => sum + t.txns24h, 0);
   const totalLiquidity = tokens.reduce((sum, t) => sum + t.liquidity, 0);
 
-  // Compute trending data from all tokens across both chains
   const bannerItems = useMemo<BannerItem[]>(() => {
     const all = allTokens.length > 0 ? allTokens : tokens;
 
-    // Top gainers (24h)
     const gainers = [...all]
       .filter((t) => t.priceChange24h > 0)
       .sort((a, b) => b.priceChange24h - a.priceChange24h)
       .slice(0, 5);
 
-    // Hot (most volume)
     const hot = [...all]
       .sort((a, b) => b.volume24h - a.volume24h)
       .slice(0, 5);
 
-    // Recently launched (newest)
     const recent = [...all]
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, 5);
 
-    // Top losers
     const losers = [...all]
       .filter((t) => t.priceChange24h < 0)
       .sort((a, b) => a.priceChange24h - b.priceChange24h)
@@ -59,6 +61,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           symbol: t.baseToken.symbol,
           value: formatPercent(t.priceChange24h),
           color: 'text-xdex-green',
+          imageUrl: t.baseToken.imageUrl,
         })),
       },
       {
@@ -68,6 +71,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           symbol: t.baseToken.symbol,
           value: formatUsd(t.volume24h),
           color: 'text-orange-400',
+          imageUrl: t.baseToken.imageUrl,
         })),
       },
       {
@@ -77,6 +81,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           symbol: t.baseToken.symbol,
           value: formatPrice(t.priceUsd),
           color: 'text-xdex-accent',
+          imageUrl: t.baseToken.imageUrl,
         })),
       },
       {
@@ -96,12 +101,12 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           symbol: t.baseToken.symbol,
           value: formatPercent(t.priceChange24h),
           color: 'text-xdex-red',
+          imageUrl: t.baseToken.imageUrl,
         })),
       },
     ];
   }, [tokens, allTokens, totalVolume, totalTxns, totalLiquidity]);
 
-  // Auto-scroll the banner
   useEffect(() => {
     const interval = setInterval(() => {
       setScrollOffset((prev) => prev + 1);
@@ -117,7 +122,6 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           transform: `translateX(-${scrollOffset % 3000}px)`,
         }}
       >
-        {/* Render banner items twice for seamless loop */}
         {[...bannerItems, ...bannerItems, ...bannerItems].map((item, idx) => (
           <div key={idx} className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-1.5">
@@ -128,6 +132,14 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
             </div>
             {item.tokens.map((t, i) => (
               <div key={i} className="flex items-center gap-1.5">
+                {t.imageUrl && (
+                  <img
+                    src={t.imageUrl}
+                    alt={t.symbol}
+                    className="w-4 h-4 rounded-full object-cover flex-shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
                 <span className="text-[11px] font-medium text-white">{t.symbol}</span>
                 <span className={`text-[11px] font-mono font-medium ${t.color}`}>{t.value}</span>
               </div>
@@ -137,7 +149,6 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
         ))}
       </div>
 
-      {/* Fade edges */}
       <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black to-transparent pointer-events-none z-10" />
       <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black to-transparent pointer-events-none z-10" />
     </header>

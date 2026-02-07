@@ -138,13 +138,16 @@ export default function DegenPage() {
     return result;
   }, [tokens, activeView, favorites]);
 
-  const pairCounts = useMemo(() => ({
-    all: tokens.length,
-    new: tokens.length,
-    gainers: tokens.filter((t) => t.priceChange24h > 0).length,
-    losers: tokens.filter((t) => t.priceChange24h < 0).length,
-    watchlist: tokens.filter((t) => favorites.has(t.address)).length,
-  }), [tokens, favorites]);
+  const pairCounts = useMemo(() => {
+    const oneDayAgo = Date.now() - 86400000;
+    return {
+      all: tokens.length,
+      new: tokens.filter((t) => t.createdAt > oneDayAgo).length,
+      gainers: tokens.filter((t) => t.priceChange24h > 0).length,
+      losers: tokens.filter((t) => t.priceChange24h < 0).length,
+      watchlist: tokens.filter((t) => favorites.has(t.address)).length,
+    };
+  }, [tokens, favorites]);
 
   // All tokens from both chains for search
   const allTokens = useMemo(() => [...x1Tokens, ...solanaTokens], [x1Tokens, solanaTokens]);

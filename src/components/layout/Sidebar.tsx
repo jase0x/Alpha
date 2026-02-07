@@ -8,7 +8,6 @@ import {
   TrendingDown,
   Bookmark,
   Layers,
-  Rocket,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -125,31 +124,9 @@ export default function Sidebar({
             </button>
           );
         })}
-
-        {/* Divider */}
-        <div className="my-3 mx-2 border-t border-xdex-border/40" />
-
-        {/* Section label */}
-        {!collapsed && (
-          <div className="px-2 pb-1.5">
-            <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
-              Tools
-            </span>
-          </div>
-        )}
-
-        {/* LaunchPad */}
-        <button
-          className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg transition-all text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 ${
-            collapsed ? 'justify-center px-0' : ''
-          }`}
-        >
-          <Rocket size={16} strokeWidth={1.6} className="flex-shrink-0" />
-          {!collapsed && <span className="font-medium">LaunchPad</span>}
-        </button>
       </nav>
 
-      {/* Launch Token button */}
+      {/* Degen LaunchPad button */}
       <div className="px-3 pb-3">
         <button
           className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
@@ -157,7 +134,7 @@ export default function Sidebar({
           }`}
         >
           <DegenLogo size={18} color="#ffffff" />
-          {!collapsed && <span>Launch Token</span>}
+          {!collapsed && <span>Degen LaunchPad</span>}
         </button>
       </div>
 
