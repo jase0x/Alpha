@@ -20,17 +20,29 @@ interface TokenRowProps {
   onSwap: (token: TokenPair) => void;
 }
 
-// Inline XDEX logo mark (small, 14px)
+// Inline XDEX hexagon X logo (small)
 function XdexMark() {
   return (
-    <svg width={14} height={14} viewBox="0 0 100 100" fill="none" className="flex-shrink-0">
+    <svg width={14} height={14} viewBox="0 0 200 200" fill="none" className="flex-shrink-0">
       <defs>
-        <linearGradient id="xdex-row" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <linearGradient id="xdex-hex" x1="50" y1="0" x2="150" y2="200" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#00BFFF" />
           <stop offset="100%" stopColor="#0566ea" />
         </linearGradient>
       </defs>
-      <path d="M18 22L38 50L18 78H30L44 58L58 78H70L50 50L70 22H58L44 42L30 22H18Z" fill="url(#xdex-row)" />
+      {/* Hexagon outline */}
+      <path
+        d="M100 10 L180 55 L180 145 L100 190 L20 145 L20 55 Z"
+        stroke="url(#xdex-hex)"
+        strokeWidth="14"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      {/* X inside hexagon */}
+      <path
+        d="M62 65 L82 100 L62 135 H80 L100 108 L120 135 H138 L118 100 L138 65 H120 L100 92 L80 65 Z"
+        fill="url(#xdex-hex)"
+      />
     </svg>
   );
 }
@@ -96,24 +108,22 @@ export default function TokenRow({
             </span>
           </div>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-1">
-              <span className="font-semibold text-sm text-white truncate">
-                {token.baseToken.symbol}
+          <div className="min-w-0 flex items-center gap-1.5">
+            <span className="font-semibold text-sm text-white truncate">
+              {token.baseToken.symbol}
+            </span>
+            <span className="text-xdex-text-muted text-xs">/</span>
+            <span className="text-xs text-xdex-text-muted">
+              {token.quoteToken.symbol}
+            </span>
+            {token.isVerified && (
+              <span className="text-xdex-accent text-[10px]" title="Verified">
+                &#10003;
               </span>
-              <span className="text-xdex-text-muted text-xs">/</span>
-              <span className="text-xs text-xdex-text-muted truncate">
-                {token.quoteToken.symbol}
-              </span>
-              {token.isVerified && (
-                <span className="text-xdex-accent text-[10px]" title="Verified">
-                  &#10003;
-                </span>
-              )}
-            </div>
-            <div className="text-[11px] text-xdex-text-muted truncate max-w-[160px]">
+            )}
+            <span className="text-[11px] text-xdex-text-muted truncate ml-1">
               {token.baseToken.name}
-            </div>
+            </span>
           </div>
         </div>
       </td>
@@ -134,21 +144,21 @@ export default function TokenRow({
 
       {/* TXNS */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-accent font-mono">
+        <span className="text-sm text-white font-mono">
           {formatNumber(token.txns24h)}
         </span>
       </td>
 
       {/* Volume */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-green font-mono font-medium">
+        <span className="text-sm text-white font-mono font-medium">
           {formatUsd(token.volume24h)}
         </span>
       </td>
 
       {/* Makers */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-accent font-mono">
+        <span className="text-sm text-white font-mono">
           {formatNumber(token.makers)}
         </span>
       </td>
@@ -183,7 +193,7 @@ export default function TokenRow({
 
       {/* Liquidity */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-accent font-mono">
+        <span className="text-sm text-white font-mono">
           {formatUsd(token.liquidity)}
         </span>
       </td>
@@ -199,7 +209,7 @@ export default function TokenRow({
       <td className="px-2 py-3 text-center">
         <button
           onClick={handleSwap}
-          className="p-1.5 rounded-md text-xdex-text-muted hover:text-xdex-green hover:bg-xdex-green/10 transition-colors"
+          className="p-1.5 rounded-md text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
           title={`Swap ${token.baseToken.symbol}`}
         >
           <ArrowLeftRight size={14} />

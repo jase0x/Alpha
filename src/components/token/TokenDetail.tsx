@@ -211,7 +211,7 @@ export default function TokenDetail({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onSwap(token)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-green/20 text-xdex-green hover:bg-xdex-green/30 text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-accent/20 text-xdex-accent hover:bg-xdex-accent/30 text-xs font-semibold transition-colors"
               >
                 <ArrowLeftRight size={12} />
                 Swap
@@ -615,7 +615,7 @@ export default function TokenDetail({
           <div className="px-5 py-4">
             <button
               onClick={() => onSwap(token)}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-xdex-green/20 text-xdex-green hover:bg-xdex-green/30 text-sm font-semibold transition-colors border border-xdex-green/30"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-xdex-accent/20 text-xdex-accent hover:bg-xdex-accent/30 text-sm font-semibold transition-colors border border-xdex-accent/30"
             >
               <ArrowLeftRight size={14} />
               Swap {token.baseToken.symbol}

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Search } from 'lucide-react';
 import { TokenPair, FilterView, TimeFilter, Chain } from '@/types/token';
-import { fetchPoolList, searchTokens } from '@/services/api';
+import { fetchPoolList } from '@/services/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import TokenTable from '@/components/token/TokenTable';
 import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
-import SearchModal from '@/components/ui/SearchModal';
 import X1Logo from '@/components/ui/X1Logo';
 import SolanaLogo from '@/components/ui/SolanaLogo';
 
@@ -25,7 +25,8 @@ export default function AlphaPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedToken, setSelectedToken] = useState<TokenPair | null>(null);
   const [swapToken, setSwapToken] = useState<TokenPair | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
@@ -94,7 +95,7 @@ export default function AlphaPage() {
         const target = e.target as HTMLElement;
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
           e.preventDefault();
-          setShowSearch(true);
+          searchInputRef.current?.focus();
         }
       }
     };
@@ -115,13 +116,24 @@ export default function AlphaPage() {
     });
   }, []);
 
-  // Filter tokens based on active view
+  // Filter tokens based on active view and search query
   const filteredTokens = useMemo(() => {
     let result = tokens;
 
+    // Apply search filter first
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (t) =>
+          t.baseToken.symbol.toLowerCase().includes(q) ||
+          t.baseToken.name.toLowerCase().includes(q) ||
+          t.quoteToken.symbol.toLowerCase().includes(q) ||
+          t.address.toLowerCase().includes(q),
+      );
+    }
+
     switch (activeView) {
       case 'new': {
-        // Show only pairs created in the last 7 days, sorted newest first
         const sevenDaysAgo = Date.now() - 7 * 86400000;
         result = result
           .filter((t) => t.createdAt > sevenDaysAgo)
@@ -142,13 +154,12 @@ export default function AlphaPage() {
         result = result.filter((t) => favorites.has(t.address));
         break;
       default:
-        // 'all' — sort by TVL descending by default
         result = [...result].sort((a, b) => b.liquidity - a.liquidity);
         break;
     }
 
     return result;
-  }, [tokens, activeView, favorites]);
+  }, [tokens, activeView, favorites, searchQuery]);
 
   const pairCounts = useMemo(() => {
     const sevenDaysAgo = Date.now() - 7 * 86400000;
@@ -170,7 +181,7 @@ export default function AlphaPage() {
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
-        onSearchOpen={() => setShowSearch(true)}
+        onSearchOpen={() => searchInputRef.current?.focus()}
         pairCounts={pairCounts}
       />
 
@@ -187,7 +198,7 @@ export default function AlphaPage() {
           }}
         />
 
-        {/* View title bar with chain toggle */}
+        {/* View title bar with search and chain toggle */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-xdex-border bg-xdex-bg">
           <div className="flex items-center gap-3">
             <h2 className="text-sm font-semibold text-white capitalize">
@@ -199,6 +210,26 @@ export default function AlphaPage() {
             <div className="flex items-center gap-1 ml-2">
               <div className="w-1.5 h-1.5 rounded-full bg-xdex-green live-dot" />
               <span className="text-[10px] text-xdex-green">LIVE</span>
+            </div>
+            {/* Inline search */}
+            <div className="flex items-center gap-1.5 ml-3 px-2.5 py-1.5 rounded-lg bg-xdex-card border border-xdex-border/50 focus-within:border-xdex-accent/40 transition-colors">
+              <Search size={12} className="text-xdex-text-muted flex-shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search tokens..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent text-xs text-white placeholder:text-xdex-text-muted outline-none w-32 focus:w-48 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-xdex-text-muted hover:text-white text-xs"
+                >
+                  &times;
+                </button>
+              )}
             </div>
           </div>
 
@@ -295,19 +326,7 @@ export default function AlphaPage() {
         />
       )}
 
-      {/* Search modal — searches across both chains */}
-      {showSearch && (
-        <SearchModal
-          onClose={() => setShowSearch(false)}
-          onSelect={(token) => {
-            // Switch to the correct chain when selecting from search
-            setActiveChain(token.chain);
-            setSelectedToken(token);
-            setShowSearch(false);
-          }}
-          allTokens={allTokens}
-        />
-      )}
+      {/* Search now inline — no modal needed */}
     </div>
   );
 }

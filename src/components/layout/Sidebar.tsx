@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { FilterView } from '@/types/token';
 import AlphaLogo from '@/components/ui/AlphaLogo';
+import DegenLogo from '@/components/ui/DegenLogo';
 
 interface SidebarProps {
   activeView: FilterView;
@@ -123,18 +124,15 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Alpha LaunchPad button */}
+      {/* Degen LaunchPad button */}
       <div className="px-3 pb-3">
         <button
           className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
-          {collapsed ? (
-            <svg width={18} height={18} viewBox="0 0 40 40" fill="none"><text x="20" y="30" textAnchor="middle" fill="white" fontSize="28" fontWeight="800" fontFamily="system-ui, sans-serif">A</text></svg>
-          ) : (
-            <span>Alpha LaunchPad</span>
-          )}
+          <DegenLogo size={18} color="#ffffff" />
+          {!collapsed && <span>Degen LaunchPad</span>}
         </button>
       </div>
 

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { X, ArrowDownUp, Settings, ChevronDown, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, ArrowDownUp, Settings, Loader2 } from 'lucide-react';
 import { TokenPair } from '@/types/token';
 import { formatPrice } from '@/utils/format';
+import { fetchSwapQuote } from '@/services/api';
 
 interface SwapModalProps {
   token: TokenPair;
@@ -16,16 +17,45 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
   const [isSwapped, setIsSwapped] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const fromToken = isSwapped ? token.baseToken : token.quoteToken;
   const toToken = isSwapped ? token.quoteToken : token.baseToken;
 
+  const getQuote = useCallback(async (amount: string) => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      setToAmount('');
+      return;
+    }
+
+    setLoading(true);
+    const quote = await fetchSwapQuote(
+      token.chain,
+      fromToken.address,
+      toToken.address,
+      Number(amount),
+    );
+    setLoading(false);
+
+    if (quote && quote.amountOut > 0) {
+      setToAmount(quote.amountOut.toFixed(6));
+    } else {
+      const rate = isSwapped
+        ? (token.price || token.priceUsd)
+        : (token.price > 0 ? 1 / token.price : 1 / token.priceUsd);
+      setToAmount((Number(amount) * rate).toFixed(6));
+    }
+  }, [token, fromToken, toToken, isSwapped]);
+
+  useEffect(() => {
+    if (!fromAmount) return;
+    const timer = setTimeout(() => getQuote(fromAmount), 400);
+    return () => clearTimeout(timer);
+  }, [fromAmount, getQuote]);
+
   const handleFromChange = (val: string) => {
     setFromAmount(val);
-    if (val && !isNaN(Number(val))) {
-      const rate = isSwapped ? token.priceUsd : 1 / token.priceUsd;
-      setToAmount((Number(val) * rate).toFixed(6));
-    } else {
+    if (!val || isNaN(Number(val)) || Number(val) <= 0) {
       setToAmount('');
     }
   };
@@ -37,8 +67,6 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
   };
 
   const handleSwap = () => {
-    // Integration point: call XDEX swap API
-    // For now this would open the XDEX swap interface
     const xdexSwapUrl = `https://app.xdex.xyz/swap?inputToken=${fromToken.address}&outputToken=${toToken.address}&amount=${fromAmount}`;
     window.open(xdexSwapUrl, '_blank');
   };
@@ -116,19 +144,20 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
                 onChange={(e) => handleFromChange(e.target.value)}
                 className="flex-1 text-xl font-semibold bg-transparent text-white placeholder:text-xdex-text-muted font-mono"
               />
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-surface border border-xdex-border hover:border-xdex-accent/40 transition-colors">
-                <div className="w-5 h-5 rounded-full bg-xdex-border flex items-center justify-center">
-                  <span className="text-[8px] font-bold text-xdex-accent">
-                    {fromToken.symbol.charAt(0)}
-                  </span>
-                </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-surface border border-xdex-border">
+                {fromToken.imageUrl ? (
+                  <img src={fromToken.imageUrl} alt={fromToken.symbol} className="w-5 h-5 rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-xdex-border flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-xdex-accent">{fromToken.symbol.charAt(0)}</span>
+                  </div>
+                )}
                 <span className="text-sm font-medium text-white">{fromToken.symbol}</span>
-                <ChevronDown size={14} className="text-xdex-text-muted" />
-              </button>
+              </div>
             </div>
           </div>
 
-          {/* Swap direction button */}
+          {/* Swap direction */}
           <div className="flex justify-center -my-1 relative z-10">
             <button
               onClick={handleSwapDirection}
@@ -145,34 +174,37 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
               <span className="text-xs text-xdex-text-muted">Balance: --</span>
             </div>
             <div className="flex items-center gap-3">
-              <input
-                type="number"
-                placeholder="0.00"
-                value={toAmount}
-                readOnly
-                className="flex-1 text-xl font-semibold bg-transparent text-white placeholder:text-xdex-text-muted font-mono"
-              />
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-surface border border-xdex-border hover:border-xdex-accent/40 transition-colors">
-                <div className="w-5 h-5 rounded-full bg-xdex-border flex items-center justify-center">
-                  <span className="text-[8px] font-bold text-xdex-accent">
-                    {toToken.symbol.charAt(0)}
-                  </span>
-                </div>
+              <div className="flex-1 flex items-center gap-2">
+                <span className="text-xl font-semibold text-white font-mono">
+                  {loading ? '' : (toAmount || '0.00')}
+                </span>
+                {loading && <Loader2 size={16} className="animate-spin text-xdex-accent" />}
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-surface border border-xdex-border">
+                {toToken.imageUrl ? (
+                  <img src={toToken.imageUrl} alt={toToken.symbol} className="w-5 h-5 rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-xdex-border flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-xdex-accent">{toToken.symbol.charAt(0)}</span>
+                  </div>
+                )}
                 <span className="text-sm font-medium text-white">{toToken.symbol}</span>
-                <ChevronDown size={14} className="text-xdex-text-muted" />
-              </button>
+              </div>
             </div>
           </div>
 
           {/* Rate info */}
-          {fromAmount && toAmount && (
+          {fromAmount && toAmount && Number(fromAmount) > 0 && (
             <div className="px-2 py-2 text-xs text-xdex-text-muted">
               <div className="flex justify-between">
                 <span>Rate</span>
                 <span className="text-xdex-text-secondary">
-                  1 {fromToken.symbol} = {(Number(toAmount) / Number(fromAmount)).toFixed(6)}{' '}
-                  {toToken.symbol}
+                  1 {fromToken.symbol} = {(Number(toAmount) / Number(fromAmount)).toFixed(6)} {toToken.symbol}
                 </span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span>Price</span>
+                <span className="text-xdex-text-secondary">{formatPrice(token.priceUsd)} USD</span>
               </div>
               <div className="flex justify-between mt-1">
                 <span>Slippage</span>
@@ -190,16 +222,18 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
           {/* Swap button */}
           <button
             onClick={handleSwap}
-            disabled={!fromAmount || Number(fromAmount) <= 0}
+            disabled={!fromAmount || Number(fromAmount) <= 0 || loading}
             className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-xdex-accent text-white hover:opacity-90 active:scale-[0.98]"
           >
-            Swap via XDEX
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 size={14} className="animate-spin" /> Getting quote...
+              </span>
+            ) : 'Swap via XDEX'}
           </button>
 
           <div className="text-center">
-            <span className="text-[10px] text-xdex-text-muted">
-              Powered by XDEX AMM
-            </span>
+            <span className="text-[10px] text-xdex-text-muted">Powered by XDEX</span>
           </div>
         </div>
       </div>
