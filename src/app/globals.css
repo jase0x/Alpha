@@ -6,9 +6,9 @@
 
 :root {
   --xdex-bg: #000000;
-  --xdex-surface: #0a0a0a;
-  --xdex-card: #111111;
-  --xdex-border: #03274e;
+  --xdex-surface: #000000;
+  --xdex-card: #000000;
+  --xdex-border: #222222;
   --xdex-accent: #0566ea;
   --xdex-green: #22c55e;
   --xdex-red: #ff1744;
@@ -37,12 +37,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #03274e;
+  background: #222222;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0566ea44;
+  background: #333333;
 }
 
 /* Token table row hover */
@@ -80,7 +80,7 @@ html, body {
 
 /* Swap modal overlay */
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(4px);
 }
 

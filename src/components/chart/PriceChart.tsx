@@ -29,31 +29,31 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       const chart = createChart(containerRef.current, {
         layout: {
-          background: { type: ColorType.Solid, color: '#111111' },
+          background: { type: ColorType.Solid, color: '#000000' },
           textColor: '#555555',
           fontSize: 11,
         },
         grid: {
-          vertLines: { color: 'rgba(26, 26, 26, 0.8)' },
-          horzLines: { color: 'rgba(26, 26, 26, 0.8)' },
+          vertLines: { color: 'rgba(34, 34, 34, 0.8)' },
+          horzLines: { color: 'rgba(34, 34, 34, 0.8)' },
         },
         crosshair: {
           mode: CrosshairMode.Normal,
           vertLine: {
-            color: 'rgba(11, 119, 234, 0.3)',
-            labelBackgroundColor: '#0a0a0a',
+            color: 'rgba(5, 102, 234, 0.3)',
+            labelBackgroundColor: '#000000',
           },
           horzLine: {
-            color: 'rgba(11, 119, 234, 0.3)',
-            labelBackgroundColor: '#0a0a0a',
+            color: 'rgba(5, 102, 234, 0.3)',
+            labelBackgroundColor: '#000000',
           },
         },
         rightPriceScale: {
-          borderColor: '#1a1a1a',
+          borderColor: '#222222',
           scaleMargins: { top: 0.1, bottom: 0.2 },
         },
         timeScale: {
-          borderColor: '#1a1a1a',
+          borderColor: '#222222',
           timeVisible: true,
           secondsVisible: false,
         },
@@ -62,11 +62,11 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       // Candlestick series
       const candleSeries = chart.addCandlestickSeries({
-        upColor: '#00c853',
+        upColor: '#22c55e',
         downColor: '#ff1744',
-        borderUpColor: '#00c853',
+        borderUpColor: '#22c55e',
         borderDownColor: '#ff1744',
-        wickUpColor: '#00c853',
+        wickUpColor: '#22c55e',
         wickDownColor: '#ff1744',
       });
 
@@ -82,7 +82,7 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       // Volume series
       const volumeSeries = chart.addHistogramSeries({
-        color: 'rgba(11, 119, 234, 0.15)',
+        color: 'rgba(5, 102, 234, 0.15)',
         priceFormat: { type: 'volume' },
         priceScaleId: '',
       });
@@ -94,7 +94,7 @@ export default function PriceChart({ data }: PriceChartProps) {
       const volumeData = data.map((d) => ({
         time: d.time as any,
         value: d.volume,
-        color: d.close >= d.open ? 'rgba(0, 200, 83, 0.25)' : 'rgba(255, 23, 68, 0.25)',
+        color: d.close >= d.open ? 'rgba(34, 197, 94, 0.25)' : 'rgba(255, 23, 68, 0.25)',
       }));
 
       volumeSeries.setData(volumeData);

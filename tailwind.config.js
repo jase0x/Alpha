@@ -10,9 +10,9 @@ module.exports = {
       colors: {
         xdex: {
           bg: '#000000',
-          surface: '#0a0a0a',
-          card: '#111111',
-          border: '#03274e',
+          surface: '#000000',
+          card: '#000000',
+          border: '#222222',
           hover: '#0a0a0a',
           accent: '#0566ea',
           'accent-dim': '#0566ea33',
@@ -23,7 +23,7 @@ module.exports = {
           text: '#e6e6e6',
           'text-secondary': '#999999',
           'text-muted': '#555555',
-          'menu-bg': 'rgba(17, 17, 17, 0.6)',
+          'menu-bg': '#000000',
         },
       },
       fontFamily: {
