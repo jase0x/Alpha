@@ -41,11 +41,18 @@ export default function DegenPage() {
         fetchPoolList('solana'),
       ]);
 
+      const x1Pools = x1Data.status === 'fulfilled' ? x1Data.value : [];
       if (x1Data.status === 'fulfilled') {
-        setX1Tokens(x1Data.value);
+        setX1Tokens(x1Pools);
       }
       if (solData.status === 'fulfilled') {
-        setSolanaTokens(solData.value);
+        // Remove any Solana pools that share addresses with X1 pools
+        const x1Addresses = new Set(x1Pools.map((t) => t.address));
+        const x1BaseAddresses = new Set(x1Pools.map((t) => t.baseToken.address));
+        const uniqueSolana = solData.value.filter(
+          (t) => !x1Addresses.has(t.address) && !x1BaseAddresses.has(t.baseToken.address)
+        );
+        setSolanaTokens(uniqueSolana);
       }
 
       // Show error only if both fail
