@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: 'XDEX Alpha Scan | Token Screener',
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-xdex-bg text-xdex-text antialiased">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

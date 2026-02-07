@@ -15,10 +15,19 @@ import {
   RefreshCw,
   Clock,
   Zap,
+  ThumbsUp,
+  ThumbsDown,
+  Bell,
+  Share2,
+  Shield,
+  Trash2,
 } from 'lucide-react';
 import { TokenPair, OHLCVData } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { fetchOHLCV, fetchPoolDetails, fetchPoolDetail } from '@/services/api';
+import { computeSafetyScore } from '@/utils/safetyScore';
+import { getSentiment, vote as voteSentiment, Sentiment } from '@/services/sentimentStore';
+import { createAlert, getAlertsForToken, deleteAlert, requestNotificationPermission, PriceAlert } from '@/services/alertStore';
 import {
   formatPrice,
   formatUsd,
@@ -48,7 +57,7 @@ type TxFilter = 'all' | 'buys' | 'sells' | 'lp';
 interface MockTx {
   id: number;
   date: string;
-  timestamp: string; // ISO timestamp
+  timestamp: string;
   type: 'Buy' | 'Sell' | 'Add LP' | 'Remove LP';
   totalUsd: number;
   tokens: number;
@@ -56,7 +65,7 @@ interface MockTx {
   usdPrice: number;
   quotePrice: number;
   maker: string;
-  txHash: string; // for explorer links
+  txHash: string;
 }
 
 interface MockHolder {
@@ -66,7 +75,6 @@ interface MockHolder {
   percent: number;
 }
 
-// Generate deterministic mock transactions from token data
 function generateMockTxns(token: TokenPair): MockTx[] {
   const txns: MockTx[] = [];
   const count = Math.min(token.txns24h || 20, 50);
@@ -82,15 +90,14 @@ function generateMockTxns(token: TokenPair): MockTx[] {
     const amount = Math.random() * 5 + 0.01;
     const tokens = amount / (token.priceUsd || 0.001);
     const elapsed = Math.floor(Math.random() * 86400000);
-    const txTime = new Date(now - elapsed);
     const hours = Math.floor(elapsed / 3600000);
     const mins = Math.floor((elapsed % 3600000) / 60000);
     const dateStr = hours > 0 ? `${hours}h ${mins}m ago` : `${mins}m ago`;
+    const txTime = new Date(now - elapsed);
     const timestamp = txTime.toISOString().replace('T', ' ').slice(0, 19);
 
     const addrParts = token.address || 'abcdefghijklmnop';
     const makerAddr = `${addrParts.slice(0, 4)}...${String(i).padStart(4, '0').slice(-4)}`;
-    // Generate a mock tx hash for explorer links
     const txHash = `${addrParts.slice(0, 8)}${String(i).padStart(8, '0')}${'a'.repeat(48)}`.slice(0, 64);
 
     txns.push({
@@ -156,6 +163,18 @@ export default function TokenDetail({
     txns7d: number;
   } | null>(null);
 
+  // Sentiment state
+  const [sentiment, setSentiment] = useState(() => getSentiment(token.address));
+
+  // Alert state
+  const [tokenAlerts, setTokenAlerts] = useState<PriceAlert[]>(() => getAlertsForToken(token.address));
+  const [alertCondition, setAlertCondition] = useState<'above' | 'below'>('above');
+  const [alertPrice, setAlertPrice] = useState('');
+  const [showAlertForm, setShowAlertForm] = useState(false);
+
+  // Share state
+  const [shareCopied, setShareCopied] = useState(false);
+
   // Fetch real chart data
   useEffect(() => {
     setChartLoading(true);
@@ -199,9 +218,41 @@ export default function TokenDetail({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleVote = (s: Sentiment) => {
+    const result = voteSentiment(token.address, s);
+    setSentiment(result);
+  };
+
+  const handleCreateAlert = () => {
+    const price = parseFloat(alertPrice);
+    if (!price || price <= 0) return;
+    createAlert({
+      tokenAddress: token.address,
+      tokenSymbol: token.baseToken.symbol,
+      condition: alertCondition,
+      targetPrice: price,
+    });
+    requestNotificationPermission();
+    setTokenAlerts(getAlertsForToken(token.address));
+    setAlertPrice('');
+    setShowAlertForm(false);
+  };
+
+  const handleDeleteAlert = (id: string) => {
+    deleteAlert(id);
+    setTokenAlerts(getAlertsForToken(token.address));
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}?token=${token.address}&chain=${token.chain}`;
+    navigator.clipboard.writeText(url);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
   const timeframes: ChartTimeframe[] = ['5m', '15m', '1h', '4h', '1d'];
 
-  const t = liveToken; // Use live data
+  const t = liveToken;
 
   const changes = [
     { label: '5M', value: t.priceChange5m },
@@ -210,7 +261,6 @@ export default function TokenDetail({
     { label: '24H', value: t.priceChange24h },
   ];
 
-  // Buy/sell ratio from real txns
   const buyPercent = Math.min(85, Math.max(15, 50 + t.priceChange24h * 2));
   const sellPercent = 100 - buyPercent;
   const buys = Math.round(t.txns24h * (buyPercent / 100));
@@ -218,7 +268,6 @@ export default function TokenDetail({
   const buyVolume = t.volume24h * (buyPercent / 100);
   const sellVolume = t.volume24h - buyVolume;
 
-  // Risk signals
   const isLowLiquidity = t.liquidity < 1000;
   const isShallowLiquidity = t.liquidity >= 1000 && t.liquidity < 10000;
   const isHighVolatility = Math.abs(t.priceChange24h) > 20;
@@ -227,10 +276,8 @@ export default function TokenDetail({
   const hasUnusualDecimals = (t.baseToken.decimals ?? 9) !== 9 && (t.baseToken.decimals ?? 9) !== 6;
   const hasSmallPrice = t.priceUsd > 0 && t.priceUsd < 0.00001;
 
-  // Liquidity depth classification
   const liquidityDepth = t.liquidity >= 100000 ? 'deep' : t.liquidity >= 10000 ? 'moderate' : t.liquidity >= 1000 ? 'shallow' : 'thin';
 
-  // Price calculator
   const calcResult = useMemo(() => {
     const amount = parseFloat(calcAmount) || 0;
     return amount * t.priceUsd;
@@ -238,7 +285,11 @@ export default function TokenDetail({
 
   const nativePrice = t.price || 0;
 
-  // Mock data for bottom tabs
+  const safety = useMemo(() => computeSafetyScore(t), [t]);
+
+  const sentimentTotal = sentiment.bullish + sentiment.bearish;
+  const bullishPct = sentimentTotal > 0 ? (sentiment.bullish / sentimentTotal) * 100 : 50;
+
   const mockTxns = useMemo(() => generateMockTxns(t), [t]);
   const mockHolders = useMemo(() => generateMockHolders(t, 'token'), [t]);
   const mockLPHolders = useMemo(() => generateMockHolders(t, 'lp'), [t]);
@@ -283,6 +334,13 @@ export default function TokenDetail({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleShare}
+                className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
+                title="Share token link"
+              >
+                {shareCopied ? <span className="text-[10px] text-xdex-accent font-medium">Copied!</span> : <Share2 size={13} />}
+              </button>
               <button
                 onClick={refreshData}
                 className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
@@ -333,9 +391,8 @@ export default function TokenDetail({
             <PriceChart data={chartData} />
           </div>
 
-          {/* Bottom tabs: Transactions / Token Holders / LP Holders */}
+          {/* Bottom tabs */}
           <div className="flex-1 flex flex-col min-h-0 border-t border-xdex-border">
-            {/* Tab bar */}
             <div className="flex items-center gap-0 border-b border-xdex-border flex-shrink-0">
               {bottomTabs.map((tab) => (
                 <button
@@ -357,7 +414,6 @@ export default function TokenDetail({
               ))}
             </div>
 
-            {/* Tab content */}
             <div className="flex-1 overflow-y-auto">
               {bottomTab === 'transactions' && (
                 <div>
@@ -638,6 +694,173 @@ export default function TokenDetail({
             </div>
           </div>
 
+          {/* Safety Score panel */}
+          <div className="px-5 py-3 border-b border-xdex-border">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Shield size={12} className={safety.color} />
+                <span className="text-[10px] text-xdex-text-muted font-semibold uppercase">Safety Score</span>
+              </div>
+              <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded ${safety.color} ${safety.bgColor}`}>
+                {safety.score}/100
+                <span className="text-[9px] font-medium ml-0.5">{safety.label}</span>
+              </span>
+            </div>
+            <div className="h-1.5 bg-xdex-border/30 rounded-full overflow-hidden mb-2">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  safety.score >= 80 ? 'bg-xdex-green' :
+                  safety.score >= 60 ? 'bg-emerald-400' :
+                  safety.score >= 40 ? 'bg-yellow-400' :
+                  safety.score >= 20 ? 'bg-orange-400' : 'bg-xdex-red'
+                }`}
+                style={{ width: `${safety.score}%` }}
+              />
+            </div>
+            {safety.risks.length > 0 && (
+              <div className="space-y-1">
+                {safety.risks.map((risk, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <AlertTriangle size={9} className="text-yellow-400/70 mt-0.5 flex-shrink-0" />
+                    <span className="text-[10px] text-xdex-text-muted">{risk}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {safety.risks.length === 0 && (
+              <span className="text-[10px] text-xdex-green">No risks detected</span>
+            )}
+          </div>
+
+          {/* Community Sentiment */}
+          <div className="px-5 py-3 border-b border-xdex-border">
+            <div className="text-[10px] text-xdex-text-muted font-semibold uppercase tracking-wider mb-2">
+              Community Sentiment
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                onClick={() => handleVote('bullish')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  sentiment.userVote === 'bullish'
+                    ? 'bg-xdex-green/20 text-xdex-green border border-xdex-green/30'
+                    : 'bg-xdex-card/30 text-xdex-text-muted border border-xdex-border/40 hover:border-xdex-green/30 hover:text-xdex-green'
+                }`}
+              >
+                <ThumbsUp size={12} />
+                Bullish
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5">{sentiment.bullish}</span>
+              </button>
+              <button
+                onClick={() => handleVote('bearish')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  sentiment.userVote === 'bearish'
+                    ? 'bg-xdex-red/20 text-xdex-red border border-xdex-red/30'
+                    : 'bg-xdex-card/30 text-xdex-text-muted border border-xdex-border/40 hover:border-xdex-red/30 hover:text-xdex-red'
+                }`}
+              >
+                <ThumbsDown size={12} />
+                Bearish
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5">{sentiment.bearish}</span>
+              </button>
+            </div>
+            {sentimentTotal > 0 && (
+              <div className="h-1.5 rounded-full overflow-hidden flex">
+                <div className="bg-xdex-green transition-all" style={{ width: `${bullishPct}%` }} />
+                <div className="bg-xdex-red transition-all" style={{ width: `${100 - bullishPct}%` }} />
+              </div>
+            )}
+          </div>
+
+          {/* Price Alerts */}
+          <div className="px-5 py-3 border-b border-xdex-border">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Bell size={12} className="text-xdex-text-muted" />
+                <span className="text-[10px] text-xdex-text-muted font-semibold uppercase">Price Alerts</span>
+              </div>
+              <button
+                onClick={() => setShowAlertForm(!showAlertForm)}
+                className="text-[10px] px-2 py-0.5 rounded bg-xdex-accent/15 text-xdex-accent font-medium hover:bg-xdex-accent/25 transition-colors"
+              >
+                {showAlertForm ? 'Cancel' : '+ Add'}
+              </button>
+            </div>
+
+            {showAlertForm && (
+              <div className="space-y-2 mb-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setAlertCondition('above')}
+                    className={`flex-1 px-2 py-1.5 text-[10px] rounded font-medium transition-colors ${
+                      alertCondition === 'above'
+                        ? 'bg-xdex-green/15 text-xdex-green border border-xdex-green/30'
+                        : 'bg-xdex-card/30 text-xdex-text-muted border border-xdex-border/40'
+                    }`}
+                  >
+                    Above
+                  </button>
+                  <button
+                    onClick={() => setAlertCondition('below')}
+                    className={`flex-1 px-2 py-1.5 text-[10px] rounded font-medium transition-colors ${
+                      alertCondition === 'below'
+                        ? 'bg-xdex-red/15 text-xdex-red border border-xdex-red/30'
+                        : 'bg-xdex-card/30 text-xdex-text-muted border border-xdex-border/40'
+                    }`}
+                  >
+                    Below
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-1 px-2.5 py-1.5 rounded border border-xdex-border/60 bg-black focus-within:border-xdex-accent/30">
+                    <span className="text-[10px] text-xdex-text-muted">$</span>
+                    <input
+                      type="number"
+                      placeholder={formatPrice(t.priceUsd)}
+                      value={alertPrice}
+                      onChange={(e) => setAlertPrice(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0"
+                      style={{ boxShadow: 'none' }}
+                    />
+                  </div>
+                  <button
+                    onClick={handleCreateAlert}
+                    className="px-3 py-1.5 rounded bg-xdex-accent text-white text-[10px] font-semibold hover:brightness-110 transition-all"
+                  >
+                    Set
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {tokenAlerts.length > 0 && (
+              <div className="space-y-1">
+                {tokenAlerts.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between p-1.5 rounded bg-xdex-card/20 border border-xdex-border/30">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-medium ${a.condition === 'above' ? 'text-xdex-green' : 'text-xdex-red'}`}>
+                        {a.condition === 'above' ? '>' : '<'}
+                      </span>
+                      <span className="text-[10px] text-white font-mono">${a.targetPrice.toFixed(6)}</span>
+                      {a.triggered && (
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-xdex-green/15 text-xdex-green">Triggered</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAlert(a.id)}
+                      className="p-1 text-xdex-text-muted hover:text-xdex-red transition-colors"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tokenAlerts.length === 0 && !showAlertForm && (
+              <span className="text-[10px] text-xdex-text-muted">No alerts set</span>
+            )}
+          </div>
+
           {/* Risk/Safety signals */}
           {(isLowLiquidity || isShallowLiquidity || isHighVolatility || isVeryNew || hasUnusualDecimals || hasSmallPrice) && (
             <div className="px-5 py-3 border-b border-xdex-border space-y-1.5">
@@ -910,6 +1133,12 @@ export default function TokenDetail({
               >
                 <Globe size={12} /> Trade on XDEX
               </a>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1 text-xs text-xdex-text-muted hover:text-xdex-accent transition-colors"
+              >
+                <Share2 size={12} /> {shareCopied ? 'Copied!' : 'Share'}
+              </button>
             </div>
 
             <div className="flex items-center justify-center mt-4 pt-3 border-t border-xdex-border/40">

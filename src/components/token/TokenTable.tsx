@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { TokenPair, SortField, SortDirection } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
+import { ColumnId } from '@/utils/columnPrefs';
+import { computeSafetyScore } from '@/utils/safetyScore';
 import TokenRow from './TokenRow';
 
 interface TokenTableProps {
@@ -13,13 +15,14 @@ interface TokenTableProps {
   onFavorite: (address: string) => void;
   favorites: Set<string>;
   boostMap?: Map<string, ActiveBoost>;
+  visibleColumns?: Set<ColumnId>;
+  selectedIndex?: number;
 }
 
 interface ColumnDef {
-  key: SortField | 'token';
+  key: SortField | 'token' | 'safety';
   label: string;
   align: 'left' | 'right' | 'center';
-  width?: string;
   sortable: boolean;
 }
 
@@ -36,9 +39,10 @@ const columns: ColumnDef[] = [
   { key: 'priceChange24h', label: '24H', align: 'right', sortable: true },
   { key: 'liquidity', label: 'LIQUIDITY', align: 'right', sortable: true },
   { key: 'marketCap', label: 'MCAP', align: 'right', sortable: true },
+  { key: 'safety', label: 'SAFETY', align: 'center', sortable: true },
 ];
 
-function getSortValue(token: TokenPair, field: SortField): number {
+function getSortValue(token: TokenPair, field: SortField | 'safety'): number {
   switch (field) {
     case 'price': return token.priceUsd;
     case 'age': return token.createdAt;
@@ -51,6 +55,7 @@ function getSortValue(token: TokenPair, field: SortField): number {
     case 'priceChange24h': return token.priceChange24h;
     case 'liquidity': return token.liquidity;
     case 'marketCap': return token.marketCap;
+    case 'safety': return computeSafetyScore(token).score;
     default: return 0;
   }
 }
@@ -62,13 +67,15 @@ export default function TokenTable({
   onFavorite,
   favorites,
   boostMap,
+  visibleColumns,
+  selectedIndex,
 }: TokenTableProps) {
-  const [sortField, setSortField] = useState<SortField>('volume');
+  const [sortField, setSortField] = useState<SortField | 'safety'>('volume');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
 
   const handleSort = (field: string) => {
     if (field === 'token') return;
-    const sf = field as SortField;
+    const sf = field as SortField | 'safety';
     if (sortField === sf) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     } else {
@@ -77,14 +84,16 @@ export default function TokenTable({
     }
   };
 
+  const filteredColumns = useMemo(() => {
+    if (!visibleColumns) return columns;
+    return columns.filter((c) => visibleColumns.has(c.key as ColumnId));
+  }, [visibleColumns]);
+
   const sortedTokens = useMemo(() => {
     return [...tokens].sort((a, b) => {
       const aVal = getSortValue(a, sortField);
       const bVal = getSortValue(b, sortField);
-      const diff = sortField === 'age'
-        ? (sortDir === 'desc' ? bVal - aVal : aVal - bVal) // newer first for desc
-        : (sortDir === 'desc' ? bVal - aVal : aVal - bVal);
-      return diff;
+      return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
     });
   }, [tokens, sortField, sortDir]);
 
@@ -93,7 +102,7 @@ export default function TokenTable({
       <table className="w-full" style={{ tableLayout: 'auto' }}>
         <thead className="sticky top-0 z-10">
           <tr className="bg-xdex-surface border-b border-xdex-border">
-            {columns.map((col) => (
+            {filteredColumns.map((col) => (
               <th
                 key={col.key}
                 className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap ${
@@ -134,6 +143,8 @@ export default function TokenTable({
               onClick={onTokenClick}
               onSwap={onSwap}
               boost={boostMap?.get(token.address.toLowerCase()) ?? null}
+              visibleColumns={visibleColumns}
+              isSelected={selectedIndex === index}
             />
           ))}
         </tbody>

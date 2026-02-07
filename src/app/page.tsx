@@ -9,11 +9,18 @@ import {
   TrendingDown,
   Bookmark,
   Layers,
+  Settings2,
+  Download,
+  Menu,
 } from 'lucide-react';
 import { TokenPair, FilterView, TimeFilter, Chain } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
+import { ColumnId, getVisibleColumns, saveVisibleColumns, exportTokensCSV, downloadCSV } from '@/utils/columnPrefs';
+import { checkAlerts } from '@/services/alertStore';
+import { seedSentiment } from '@/services/sentimentStore';
 import { fetchPoolList } from '@/services/api';
 import { getBoostMap } from '@/services/boostStore';
+import { useToast } from '@/components/ui/Toast';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import TokenTable from '@/components/token/TokenTable';
@@ -21,6 +28,9 @@ import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
 import BoostForm from '@/components/boost/BoostForm';
 import BoostProfile from '@/components/boost/BoostProfile';
+import KeyboardShortcuts from '@/components/ui/KeyboardShortcuts';
+import ColumnSettings from '@/components/ui/ColumnSettings';
+import WalletStub from '@/components/ui/WalletStub';
 import X1Logo from '@/components/ui/X1Logo';
 import SolanaLogo from '@/components/ui/SolanaLogo';
 
@@ -62,6 +72,8 @@ const filterTabs: {
   { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-yellow-400 border-yellow-400' },
 ];
 
+const filterViewIds: FilterView[] = ['all', 'new', 'gainers', 'losers', 'watchlist'];
+
 export default function AlphaPage() {
   return (
     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-black"><div className="w-8 h-8 border-2 border-xdex-accent border-t-transparent rounded-full animate-spin" /></div>}>
@@ -73,6 +85,7 @@ export default function AlphaPage() {
 function AlphaPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   // Separate data stores for each chain
   const [x1Tokens, setX1Tokens] = useState<TokenPair[]>([]);
@@ -99,6 +112,22 @@ function AlphaPageContent() {
   const [showBoostProfile, setShowBoostProfile] = useState(false);
   const [boostMap, setBoostMap] = useState<Map<string, ActiveBoost>>(new Map());
   const [boostVersion, setBoostVersion] = useState(0);
+
+  // Column settings state
+  const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(() => getVisibleColumns());
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+
+  // Keyboard shortcuts
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Wallet stub
+  const [showWalletStub, setShowWalletStub] = useState(false);
+
+  // Selected row index for keyboard navigation
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  // Mobile sidebar
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
@@ -132,12 +161,33 @@ function AlphaPageContent() {
       if (x1Data.status === 'rejected' && solData.status === 'rejected') {
         setError('Failed to load data from XDEX API');
       }
+
+      // Seed sentiment for loaded tokens
+      const allPools = [
+        ...(x1Data.status === 'fulfilled' ? x1Data.value : []),
+        ...(solData.status === 'fulfilled' ? solData.value : []),
+      ];
+      for (const t of allPools) {
+        seedSentiment(t.address, t.priceChange24h);
+      }
+
+      // Check price alerts against current prices
+      const priceMap = new Map<string, number>();
+      for (const t of allPools) {
+        priceMap.set(t.address.toLowerCase(), t.priceUsd);
+      }
+      const triggered = checkAlerts(priceMap);
+      if (triggered.length > 0) {
+        for (const a of triggered) {
+          toast('info', `Alert: ${a.tokenSymbol} is now ${a.condition} $${a.targetPrice.toFixed(6)}`);
+        }
+      }
     } catch {
       setError('Failed to connect to XDEX API');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   // Initial load
   useEffect(() => {
@@ -189,19 +239,10 @@ function AlphaPageContent() {
     pendingTokenId.current = null;
   }, [loading, x1Tokens, solanaTokens]);
 
-  // Keyboard shortcut for search
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
-        const target = e.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          searchInputRef.current?.focus();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+  // Save column preferences when changed
+  const handleColumnChange = useCallback((cols: Set<ColumnId>) => {
+    setVisibleColumns(cols);
+    saveVisibleColumns(cols);
   }, []);
 
   const toggleFavorite = useCallback((address: string) => {
@@ -276,13 +317,116 @@ function AlphaPageContent() {
   // All tokens from both chains for search
   const allTokens = useMemo(() => [...x1Tokens, ...solanaTokens], [x1Tokens, solanaTokens]);
 
+  // Export CSV
+  const handleExport = useCallback(() => {
+    const csv = exportTokensCSV(filteredTokens);
+    const chainLabel = activeChain === 'x1' ? 'X1' : 'Solana';
+    downloadCSV(csv, `alpha-${chainLabel}-${activeView}-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast('success', `Exported ${filteredTokens.length} tokens to CSV`);
+  }, [activeChain, activeView, toast, filteredTokens]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !isInput) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (isInput) return;
+
+      if (e.key !== 'Escape' && (showBoostForm || showBoostProfile || showColumnSettings || showWalletStub)) return;
+
+      switch (e.key) {
+        case '?':
+          e.preventDefault();
+          setShowShortcuts((v) => !v);
+          break;
+        case 'Escape':
+          if (showShortcuts) setShowShortcuts(false);
+          else if (showColumnSettings) setShowColumnSettings(false);
+          else if (showWalletStub) setShowWalletStub(false);
+          else if (showBoostForm) setShowBoostForm(false);
+          else if (showBoostProfile) setShowBoostProfile(false);
+          else if (selectedToken) setSelectedToken(null);
+          break;
+        case 'j':
+        case 'J':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.min(prev + 1, filteredTokens.length - 1));
+          break;
+        case 'k':
+        case 'K':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          if (selectedIndex >= 0 && selectedIndex < filteredTokens.length) {
+            setSelectedToken(filteredTokens[selectedIndex]);
+          }
+          break;
+        case 'f':
+        case 'F':
+          if (selectedIndex >= 0 && selectedIndex < filteredTokens.length) {
+            e.preventDefault();
+            toggleFavorite(filteredTokens[selectedIndex].address);
+          }
+          break;
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          handleExport();
+          break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5': {
+          const idx = parseInt(e.key) - 1;
+          if (idx >= 0 && idx < filterViewIds.length) {
+            e.preventDefault();
+            setActiveView(filterViewIds[idx]);
+            setSelectedIndex(-1);
+          }
+          break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [selectedToken, selectedIndex, filteredTokens, showShortcuts, showColumnSettings, showWalletStub, showBoostForm, showBoostProfile, handleExport, toggleFavorite]);
+
+  // Reset selected index when filters change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [activeView, activeChain, searchQuery]);
+
   return (
     <div className="flex h-screen overflow-hidden bg-xdex-bg">
-      {/* Sidebar */}
-      <Sidebar
-        onAdvertise={() => setShowBoostForm(true)}
-        onProfile={() => setShowBoostProfile(true)}
-      />
+      {/* Sidebar — desktop */}
+      <div className="sidebar-desktop">
+        <Sidebar
+          onAdvertise={() => setShowBoostForm(true)}
+          onProfile={() => setShowBoostProfile(true)}
+        />
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-[80] flex md:hidden">
+          <div className="absolute inset-0 modal-overlay" onClick={() => setMobileSidebarOpen(false)} />
+          <div className="relative z-10">
+            <Sidebar
+              onAdvertise={() => { setShowBoostForm(true); setMobileSidebarOpen(false); }}
+              onProfile={() => { setShowBoostProfile(true); setMobileSidebarOpen(false); }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -299,8 +443,16 @@ function AlphaPageContent() {
 
         {/* Title bar: XDEX logo | Alpha | LIVE | filters | search | chain toggle */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-border bg-xdex-bg">
-          {/* Left: XDEX mark + Alpha + LIVE */}
+          {/* Left: mobile menu + XDEX mark + Alpha + LIVE */}
           <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-1 rounded-md text-xdex-text-muted hover:text-white transition-colors"
+            >
+              <Menu size={18} />
+            </button>
+
             <div className="flex items-center gap-1.5">
               <XdexMark size={20} />
               <span className="text-sm font-bold text-white tracking-tight">Alpha</span>
@@ -311,10 +463,10 @@ function AlphaPageContent() {
             </div>
 
             {/* Divider */}
-            <div className="w-px h-5 bg-xdex-border/60 mx-1" />
+            <div className="w-px h-5 bg-xdex-border/60 mx-1 hidden sm:block" />
 
-            {/* Filter tabs */}
-            <div className="flex items-center gap-0.5">
+            {/* Filter tabs — hide on very small screens */}
+            <div className="hidden sm:flex items-center gap-0.5">
               {filterTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeView === tab.id;
@@ -331,7 +483,7 @@ function AlphaPageContent() {
                     }`}
                   >
                     <Icon size={12} strokeWidth={isActive ? 2.2 : 1.6} />
-                    <span>{tab.label}</span>
+                    <span className="hidden md:inline">{tab.label}</span>
                     {count > 0 && (
                       <span className={`text-[9px] px-1 py-0.5 rounded-full ${
                         isActive ? 'bg-white/10' : 'bg-xdex-border/40'
@@ -345,8 +497,29 @@ function AlphaPageContent() {
             </div>
           </div>
 
-          {/* Right: Search + Chain toggle */}
-          <div className="flex items-center gap-3">
+          {/* Right: Tools + Search + Chain toggle */}
+          <div className="flex items-center gap-2">
+            {/* Export CSV */}
+            <button
+              onClick={handleExport}
+              className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
+              title="Export CSV (E)"
+            >
+              <Download size={14} />
+            </button>
+
+            {/* Column settings */}
+            <button
+              onClick={() => setShowColumnSettings(true)}
+              className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
+              title="Column settings"
+            >
+              <Settings2 size={14} />
+            </button>
+
+            {/* Divider */}
+            <div className="w-px h-4 bg-xdex-border/40" />
+
             {/* Inline search */}
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-xdex-card border border-xdex-border/50 focus-within:border-xdex-accent/40 transition-colors">
               <Search size={12} className="text-xdex-text-muted flex-shrink-0" />
@@ -379,7 +552,7 @@ function AlphaPageContent() {
                 }`}
               >
                 <X1Logo size={14} />
-                X1
+                <span className="hidden sm:inline">X1</span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                   activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
                 }`}>
@@ -395,7 +568,7 @@ function AlphaPageContent() {
                 }`}
               >
                 <SolanaLogo size={14} />
-                Solana
+                <span className="hidden sm:inline">Solana</span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                   activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
                 }`}>
@@ -437,6 +610,8 @@ function AlphaPageContent() {
             onFavorite={toggleFavorite}
             favorites={favorites}
             boostMap={boostMap}
+            visibleColumns={visibleColumns}
+            selectedIndex={selectedIndex}
           />
         )}
       </div>
@@ -483,6 +658,25 @@ function AlphaPageContent() {
             setShowBoostForm(true);
           }}
         />
+      )}
+
+      {/* Keyboard shortcuts modal */}
+      {showShortcuts && (
+        <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />
+      )}
+
+      {/* Column settings modal */}
+      {showColumnSettings && (
+        <ColumnSettings
+          visible={visibleColumns}
+          onChange={handleColumnChange}
+          onClose={() => setShowColumnSettings(false)}
+        />
+      )}
+
+      {/* Wallet stub modal */}
+      {showWalletStub && (
+        <WalletStub onClose={() => setShowWalletStub(false)} />
       )}
     </div>
   );
