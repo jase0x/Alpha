@@ -10,7 +10,7 @@ import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
 import SearchModal from '@/components/ui/SearchModal';
 
-export default function AlphaPage() {
+export default function DegenPage() {
   // Separate data stores for each chain
   const [x1Tokens, setX1Tokens] = useState<TokenPair[]>([]);
   const [solanaTokens, setSolanaTokens] = useState<TokenPair[]>([]);
@@ -70,7 +70,7 @@ export default function AlphaPage() {
 
   // Load favorites from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('alpha-favorites');
+    const saved = localStorage.getItem('degen-favorites');
     if (saved) {
       try {
         setFavorites(new Set(JSON.parse(saved)));
@@ -101,7 +101,7 @@ export default function AlphaPage() {
       } else {
         next.add(address);
       }
-      localStorage.setItem('alpha-favorites', JSON.stringify([...next]));
+      localStorage.setItem('degen-favorites', JSON.stringify([...next]));
       return next;
     });
   }, []);

@@ -57,7 +57,7 @@ export default function Sidebar({
       <div className="flex items-center gap-2 px-3 h-14 border-b border-xdex-border">
         <DegenLogo size={collapsed ? 28 : 32} />
         {!collapsed && (
-          <span className="text-base font-bold text-white tracking-tight">Alpha</span>
+          <span className="text-base font-bold text-white tracking-tight">Degen</span>
         )}
       </div>
 

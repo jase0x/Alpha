@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Alpha | XDEX Token Screener',
+  title: 'Degen | XDEX Token Screener',
   description: 'Real-time token screener for X1 and Solana — powered by XDEX',
 };
 
