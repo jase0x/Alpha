@@ -1,6 +1,6 @@
 'use client';
 
-import { Star, ArrowLeftRight } from 'lucide-react';
+import { Star, ArrowLeftRight, AlertTriangle } from 'lucide-react';
 import { TokenPair } from '@/types/token';
 import {
   formatPrice,
@@ -30,7 +30,6 @@ function XdexMark() {
           <stop offset="100%" stopColor="#0566ea" />
         </linearGradient>
       </defs>
-      {/* Hexagon outline */}
       <path
         d="M100 10 L180 55 L180 145 L100 190 L20 145 L20 55 Z"
         stroke="url(#xdex-hex)"
@@ -38,7 +37,6 @@ function XdexMark() {
         fill="none"
         strokeLinejoin="round"
       />
-      {/* X inside hexagon */}
       <path
         d="M62 65 L82 100 L62 135 H80 L100 108 L120 135 H138 L118 100 L138 65 H120 L100 92 L80 65 Z"
         fill="url(#xdex-hex)"
@@ -65,12 +63,16 @@ export default function TokenRow({
     onSwap(token);
   };
 
+  // Risk indicators
+  const isLowLiquidity = token.liquidity < 1000;
+  const isNew = (Date.now() - token.createdAt) < 7 * 86400000;
+
   return (
     <tr
       className="token-row border-b border-xdex-border/50 cursor-pointer"
       onClick={() => onClick(token)}
     >
-      {/* Token info: rank | XDEX logo | image | symbol/pair | name */}
+      {/* Token info: rank | XDEX logo | swap | star | image | symbol/pair | name */}
       <td className="px-3 py-3">
         <div className="flex items-center gap-2">
           {/* Rank number */}
@@ -80,6 +82,15 @@ export default function TokenRow({
 
           {/* XDEX logo */}
           <XdexMark />
+
+          {/* Swap button — directly left of token logo */}
+          <button
+            onClick={handleSwap}
+            className="p-1 rounded-md text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors flex-shrink-0"
+            title={`Swap ${token.baseToken.symbol}`}
+          >
+            <ArrowLeftRight size={13} />
+          </button>
 
           {/* Favorite star */}
           <button
@@ -124,6 +135,12 @@ export default function TokenRow({
             <span className="text-[11px] text-xdex-text-muted truncate ml-1">
               {token.baseToken.name}
             </span>
+            {isLowLiquidity && (
+              <span className="flex-shrink-0 ml-0.5" title="Low liquidity"><AlertTriangle size={10} className="text-yellow-400/70" /></span>
+            )}
+            {isNew && (
+              <span className="text-[8px] px-1 py-0.5 rounded bg-xdex-accent/15 text-xdex-accent font-semibold flex-shrink-0 ml-0.5">NEW</span>
+            )}
           </div>
         </div>
       </td>
@@ -193,7 +210,7 @@ export default function TokenRow({
 
       {/* Liquidity */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-white font-mono">
+        <span className={`text-sm font-mono ${isLowLiquidity ? 'text-yellow-400/70' : 'text-white'}`}>
           {formatUsd(token.liquidity)}
         </span>
       </td>
@@ -203,17 +220,6 @@ export default function TokenRow({
         <span className="text-sm text-white font-mono font-medium">
           {formatUsd(token.marketCap)}
         </span>
-      </td>
-
-      {/* Swap button */}
-      <td className="px-2 py-3 text-center">
-        <button
-          onClick={handleSwap}
-          className="p-1.5 rounded-md text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
-          title={`Swap ${token.baseToken.symbol}`}
-        >
-          <ArrowLeftRight size={14} />
-        </button>
       </td>
     </tr>
   );

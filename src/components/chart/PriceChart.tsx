@@ -62,12 +62,12 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       // Candlestick series
       const candleSeries = chart.addCandlestickSeries({
-        upColor: '#22c55e',
-        downColor: '#ff1744',
-        borderUpColor: '#22c55e',
-        borderDownColor: '#ff1744',
-        wickUpColor: '#22c55e',
-        wickDownColor: '#ff1744',
+        upColor: '#4ade80',
+        downColor: '#f87171',
+        borderUpColor: '#4ade80',
+        borderDownColor: '#f87171',
+        wickUpColor: '#4ade80',
+        wickDownColor: '#f87171',
       });
 
       const formattedData = data.map((d) => ({
@@ -94,7 +94,7 @@ export default function PriceChart({ data }: PriceChartProps) {
       const volumeData = data.map((d) => ({
         time: d.time as any,
         value: d.volume,
-        color: d.close >= d.open ? 'rgba(34, 197, 94, 0.25)' : 'rgba(255, 23, 68, 0.25)',
+        color: d.close >= d.open ? 'rgba(74, 222, 128, 0.25)' : 'rgba(248, 113, 113, 0.25)',
       }));
 
       volumeSeries.setData(volumeData);

@@ -7,12 +7,14 @@ export interface TokenPair {
     symbol: string;
     name: string;
     imageUrl?: string;
+    decimals?: number;
   };
   quoteToken: {
     address: string;
     symbol: string;
     name: string;
     imageUrl?: string;
+    decimals?: number;
   };
   chain: Chain;
   dex: string;
@@ -33,6 +35,11 @@ export interface TokenPair {
   fdv: number;
   isFavorited?: boolean;
   isVerified?: boolean;
+  // Extended fields
+  lpHolderCount?: number;
+  fee24h?: number;
+  apr24h?: number;
+  lpPrice?: number;
 }
 
 export interface TokenDetail extends TokenPair {

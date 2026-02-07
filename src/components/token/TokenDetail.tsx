@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   X,
   ExternalLink,
@@ -10,9 +10,13 @@ import {
   Globe,
   ArrowUpDown,
   ChevronLeft,
+  AlertTriangle,
+  Wallet,
+  RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { TokenPair, OHLCVData } from '@/types/token';
-import { fetchOHLCV } from '@/services/api';
+import { fetchOHLCV, fetchPoolDetails, fetchPoolDetail } from '@/services/api';
 import {
   formatPrice,
   formatUsd,
@@ -60,7 +64,6 @@ interface MockHolder {
 // Generate deterministic mock transactions from token data
 function generateMockTxns(token: TokenPair): MockTx[] {
   const txns: MockTx[] = [];
-  const now = Date.now();
   const count = Math.min(token.txns24h || 20, 50);
 
   for (let i = 0; i < count; i++) {
@@ -126,15 +129,56 @@ export default function TokenDetail({
   onFavorite,
 }: TokenDetailProps) {
   const [chartData, setChartData] = useState<OHLCVData[]>([]);
+  const [chartLoading, setChartLoading] = useState(true);
   const [chartTimeframe, setChartTimeframe] = useState<ChartTimeframe>('1h');
   const [copied, setCopied] = useState(false);
   const [calcAmount, setCalcAmount] = useState('1');
   const [bottomTab, setBottomTab] = useState<BottomTab>('transactions');
   const [txFilter, setTxFilter] = useState<TxFilter>('all');
+  const [liveToken, setLiveToken] = useState<TokenPair>(token);
+  const [extendedData, setExtendedData] = useState<{
+    amount1: number;
+    amount2: number;
+    volumeUsd24h: number;
+    txns7d: number;
+  } | null>(null);
 
+  // Fetch real chart data
   useEffect(() => {
-    fetchOHLCV(token.address, chartTimeframe, token.priceUsd).then(setChartData);
-  }, [token.address, chartTimeframe, token.priceUsd]);
+    setChartLoading(true);
+    fetchOHLCV(token, chartTimeframe).then((data) => {
+      setChartData(data);
+      setChartLoading(false);
+    });
+  }, [token.address, chartTimeframe, token.chain]);
+
+  // Fetch extended pool details
+  useEffect(() => {
+    fetchPoolDetails(token.address, token.chain).then(setExtendedData);
+  }, [token.address, token.chain]);
+
+  // Auto-refresh live data every 30s
+  useEffect(() => {
+    const refresh = async () => {
+      const updated = await fetchPoolDetail(token.address, token.chain);
+      if (updated) setLiveToken(updated);
+    };
+    const interval = setInterval(refresh, 30000);
+    return () => clearInterval(interval);
+  }, [token.address, token.chain]);
+
+  const refreshData = useCallback(async () => {
+    setChartLoading(true);
+    const [chartResult, poolResult, extResult] = await Promise.allSettled([
+      fetchOHLCV(token, chartTimeframe),
+      fetchPoolDetail(token.address, token.chain),
+      fetchPoolDetails(token.address, token.chain),
+    ]);
+    if (chartResult.status === 'fulfilled') setChartData(chartResult.value);
+    if (poolResult.status === 'fulfilled' && poolResult.value) setLiveToken(poolResult.value);
+    if (extResult.status === 'fulfilled') setExtendedData(extResult.value);
+    setChartLoading(false);
+  }, [token, chartTimeframe]);
 
   const copyAddress = () => {
     navigator.clipboard.writeText(token.baseToken.address);
@@ -144,45 +188,53 @@ export default function TokenDetail({
 
   const timeframes: ChartTimeframe[] = ['5m', '15m', '1h', '4h', '1d'];
 
+  const t = liveToken; // Use live data
+
   const changes = [
-    { label: '5M', value: token.priceChange5m },
-    { label: '1H', value: token.priceChange1h },
-    { label: '6H', value: token.priceChange6h },
-    { label: '24H', value: token.priceChange24h },
+    { label: '5M', value: t.priceChange5m },
+    { label: '1H', value: t.priceChange1h },
+    { label: '6H', value: t.priceChange6h },
+    { label: '24H', value: t.priceChange24h },
   ];
 
-  // Buy/sell ratio
-  const buyPercent = Math.min(85, Math.max(15, 50 + token.priceChange24h * 2));
+  // Buy/sell ratio from real txns
+  const buyPercent = Math.min(85, Math.max(15, 50 + t.priceChange24h * 2));
   const sellPercent = 100 - buyPercent;
-  const buys = Math.round(token.txns24h * (buyPercent / 100));
-  const sells = token.txns24h - buys;
-  const buyVolume = token.volume24h * (buyPercent / 100);
-  const sellVolume = token.volume24h - buyVolume;
+  const buys = Math.round(t.txns24h * (buyPercent / 100));
+  const sells = t.txns24h - buys;
+  const buyVolume = t.volume24h * (buyPercent / 100);
+  const sellVolume = t.volume24h - buyVolume;
+
+  // Risk signals
+  const isLowLiquidity = t.liquidity < 1000;
+  const isHighVolatility = Math.abs(t.priceChange24h) > 20;
+  const isNew = (Date.now() - t.createdAt) < 7 * 86400000;
+  const isVeryNew = (Date.now() - t.createdAt) < 24 * 3600000;
 
   // Price calculator
   const calcResult = useMemo(() => {
     const amount = parseFloat(calcAmount) || 0;
-    return amount * token.priceUsd;
-  }, [calcAmount, token.priceUsd]);
+    return amount * t.priceUsd;
+  }, [calcAmount, t.priceUsd]);
 
-  const nativePrice = token.price || 0;
+  const nativePrice = t.price || 0;
 
   // Mock data for bottom tabs
-  const mockTxns = useMemo(() => generateMockTxns(token), [token]);
-  const mockHolders = useMemo(() => generateMockHolders(token, 'token'), [token]);
-  const mockLPHolders = useMemo(() => generateMockHolders(token, 'lp'), [token]);
+  const mockTxns = useMemo(() => generateMockTxns(t), [t]);
+  const mockHolders = useMemo(() => generateMockHolders(t, 'token'), [t]);
+  const mockLPHolders = useMemo(() => generateMockHolders(t, 'lp'), [t]);
 
   const filteredTxns = useMemo(() => {
     if (txFilter === 'all') return mockTxns;
-    if (txFilter === 'buys') return mockTxns.filter((t) => t.type === 'Buy');
-    if (txFilter === 'sells') return mockTxns.filter((t) => t.type === 'Sell');
-    return mockTxns.filter((t) => t.type === 'Add LP' || t.type === 'Remove LP');
+    if (txFilter === 'buys') return mockTxns.filter((tx) => tx.type === 'Buy');
+    if (txFilter === 'sells') return mockTxns.filter((tx) => tx.type === 'Sell');
+    return mockTxns.filter((tx) => tx.type === 'Add LP' || tx.type === 'Remove LP');
   }, [mockTxns, txFilter]);
 
-  const bottomTabs: { id: BottomTab; label: string }[] = [
-    { id: 'transactions', label: 'Transactions' },
+  const bottomTabs: { id: BottomTab; label: string; count?: number }[] = [
+    { id: 'transactions', label: 'Transactions', count: t.txns24h },
     { id: 'holders', label: 'Token Holders' },
-    { id: 'lp', label: 'LP Holders' },
+    { id: 'lp', label: 'LP Holders', count: t.lpHolderCount || t.makers },
   ];
 
   return (
@@ -202,13 +254,23 @@ export default function TokenDetail({
                 <ChevronLeft size={16} />
               </button>
               <span className="text-sm font-bold text-white">
-                {token.baseToken.symbol}/{token.quoteToken.symbol}
+                {t.baseToken.symbol}/{t.quoteToken.symbol}
               </span>
-              <span className={`chain-badge ${getChainColor(token.chain)}`}>
-                {getChainLabel(token.chain)}
+              <span className={`chain-badge ${getChainColor(t.chain)}`}>
+                {getChainLabel(t.chain)}
               </span>
+              {isNew && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded bg-xdex-accent/15 text-xdex-accent font-semibold">NEW</span>
+              )}
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={refreshData}
+                className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
+                title="Refresh data"
+              >
+                <RefreshCw size={13} />
+              </button>
               <button
                 onClick={() => onSwap(token)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-xdex-accent/20 text-xdex-accent hover:bg-xdex-accent/30 text-xs font-semibold transition-colors"
@@ -238,6 +300,13 @@ export default function TokenDetail({
             </div>
             <div className="w-px h-4 bg-xdex-border mx-1" />
             <span className="text-[10px] text-xdex-text-muted">Candles</span>
+            {chartLoading && (
+              <div className="ml-2 w-3 h-3 border border-xdex-accent border-t-transparent rounded-full animate-spin" />
+            )}
+            <div className="flex items-center gap-1 ml-auto">
+              <div className="w-1.5 h-1.5 rounded-full bg-xdex-green live-dot" />
+              <span className="text-[9px] text-xdex-green font-semibold">LIVE</span>
+            </div>
           </div>
 
           {/* Chart */}
@@ -260,6 +329,11 @@ export default function TokenDetail({
                   }`}
                 >
                   {tab.label}
+                  {tab.count != null && tab.count > 0 && (
+                    <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-xdex-border/40">
+                      {formatNumber(tab.count)}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -268,7 +342,6 @@ export default function TokenDetail({
             <div className="flex-1 overflow-y-auto">
               {bottomTab === 'transactions' && (
                 <div>
-                  {/* Tx header with filter + LIVE badge */}
                   <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-border/50 sticky top-0 bg-black z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-white">Transactions</span>
@@ -276,6 +349,9 @@ export default function TokenDetail({
                         <div className="w-1.5 h-1.5 rounded-full bg-xdex-green live-dot" />
                         <span className="text-[9px] text-xdex-green font-semibold">LIVE</span>
                       </div>
+                      <span className="text-[9px] text-xdex-text-muted">
+                        {t.txns24h > 0 ? `${formatNumber(t.txns24h)} txns (24h)` : 'No recent activity'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       {(['all', 'buys', 'sells', 'lp'] as TxFilter[]).map((f) => (
@@ -294,18 +370,16 @@ export default function TokenDetail({
                     </div>
                   </div>
 
-                  {/* Tx table header */}
                   <div className="grid grid-cols-7 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
                     <span>Date</span>
                     <span>Type</span>
                     <span className="text-right">Total USD</span>
                     <span className="text-right">Tokens</span>
-                    <span className="text-right">{token.quoteToken.symbol}</span>
+                    <span className="text-right">{t.quoteToken.symbol}</span>
                     <span className="text-right">USD Price</span>
                     <span className="text-right">Maker</span>
                   </div>
 
-                  {/* Tx rows */}
                   {filteredTxns.map((tx) => (
                     <div
                       key={tx.id}
@@ -367,7 +441,15 @@ export default function TokenDetail({
 
               {bottomTab === 'lp' && (
                 <div>
-                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-0 bg-black z-10">
+                  <div className="px-4 py-2 border-b border-xdex-border/50 sticky top-0 bg-black z-10">
+                    <span className="text-xs font-semibold text-white">
+                      LP Holders
+                      <span className="ml-2 text-[10px] text-xdex-text-muted font-normal">
+                        {t.lpHolderCount || t.makers} holders
+                      </span>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
                     <span>Rank</span>
                     <span>Address</span>
                     <span className="text-right">LP Tokens</span>
@@ -404,10 +486,10 @@ export default function TokenDetail({
           <div className="px-5 pt-5 pb-4 border-b border-xdex-border">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                {token.baseToken.imageUrl ? (
+                {t.baseToken.imageUrl ? (
                   <img
-                    src={token.baseToken.imageUrl}
-                    alt={token.baseToken.symbol}
+                    src={t.baseToken.imageUrl}
+                    alt={t.baseToken.symbol}
                     className="w-10 h-10 rounded-full bg-xdex-card border border-xdex-border object-cover"
                     onError={(e) => {
                       const el = e.target as HTMLImageElement;
@@ -416,26 +498,32 @@ export default function TokenDetail({
                     }}
                   />
                 ) : null}
-                <div className={`w-10 h-10 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center ${token.baseToken.imageUrl ? 'hidden' : ''}`}>
+                <div className={`w-10 h-10 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center ${t.baseToken.imageUrl ? 'hidden' : ''}`}>
                   <span className="text-sm font-bold text-xdex-accent">
-                    {token.baseToken.symbol.charAt(0)}
+                    {t.baseToken.symbol.charAt(0)}
                   </span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-white">{token.baseToken.name}</span>
+                    <span className="text-base font-bold text-white">{t.baseToken.name}</span>
+                    {t.isVerified && (
+                      <span className="text-xdex-accent text-[10px]">&#10003;</span>
+                    )}
+                    {!t.isVerified && (
+                      <span className="text-[8px] px-1 py-0.5 rounded bg-yellow-400/10 text-yellow-400/70">Unverified</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-xs text-xdex-text-muted">{token.baseToken.symbol}/{token.quoteToken.symbol}</span>
-                    <span className={`chain-badge text-[9px] ${getChainColor(token.chain)}`}>
-                      {getChainLabel(token.chain)}
+                    <span className="text-xs text-xdex-text-muted">{t.baseToken.symbol}/{t.quoteToken.symbol}</span>
+                    <span className={`chain-badge text-[9px] ${getChainColor(t.chain)}`}>
+                      {getChainLabel(t.chain)}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => onFavorite(token.address)}
+                  onClick={() => onFavorite(t.address)}
                   className={`p-1.5 rounded-lg hover:bg-white/5 transition-colors ${
                     isFavorited ? 'text-yellow-400' : 'text-xdex-text-muted'
                   }`}
@@ -461,11 +549,11 @@ export default function TokenDetail({
             {/* Price */}
             <div className="mt-4">
               <div className="text-2xl font-bold text-white font-mono">
-                {formatPrice(token.priceUsd)}
+                {formatPrice(t.priceUsd)}
               </div>
               {nativePrice > 0 && (
                 <div className="text-sm text-xdex-text-muted font-mono mt-0.5">
-                  {nativePrice.toFixed(4)} <span className="text-xdex-text-muted">{token.quoteToken.symbol}</span>
+                  {nativePrice.toFixed(4)} <span className="text-xdex-text-muted">{t.quoteToken.symbol}</span>
                 </div>
               )}
             </div>
@@ -483,33 +571,92 @@ export default function TokenDetail({
             </div>
           </div>
 
+          {/* Risk/Safety signals */}
+          {(isLowLiquidity || isHighVolatility || isVeryNew) && (
+            <div className="px-5 py-3 border-b border-xdex-border space-y-1.5">
+              {isLowLiquidity && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
+                  <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
+                  <span className="text-[10px] text-yellow-400">Low liquidity — high slippage risk</span>
+                </div>
+              )}
+              {isHighVolatility && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-red/5 border border-xdex-red/15">
+                  <AlertTriangle size={12} className="text-xdex-red flex-shrink-0" />
+                  <span className="text-[10px] text-xdex-red">High volatility ({formatPercent(t.priceChange24h)} 24h)</span>
+                </div>
+              )}
+              {isVeryNew && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-accent/5 border border-xdex-accent/15">
+                  <Clock size={12} className="text-xdex-accent flex-shrink-0" />
+                  <span className="text-[10px] text-xdex-accent">Recently deployed — {formatAge(t.createdAt)} ago</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Wallet context placeholder */}
+          <div className="px-5 py-3 border-b border-xdex-border">
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-xdex-card/30 border border-xdex-border/40">
+              <Wallet size={14} className="text-xdex-text-muted" />
+              <div className="flex-1">
+                <span className="text-[10px] text-xdex-text-muted">Wallet not connected</span>
+              </div>
+              <button className="text-[10px] px-2 py-1 rounded bg-xdex-accent/15 text-xdex-accent font-medium hover:bg-xdex-accent/25 transition-colors">
+                Connect
+              </button>
+            </div>
+          </div>
+
           {/* Stats grid */}
           <div className="px-5 py-4 border-b border-xdex-border">
             <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">LIQ</div>
-                <div className="text-sm font-semibold text-xdex-accent font-mono mt-0.5">{formatUsd(token.liquidity)}</div>
+                <div className={`text-sm font-semibold font-mono mt-0.5 ${isLowLiquidity ? 'text-yellow-400' : 'text-xdex-accent'}`}>
+                  {formatUsd(t.liquidity)}
+                </div>
               </div>
               <div>
                 <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">FDV</div>
-                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatUsd(token.fdv)}</div>
+                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatUsd(t.fdv)}</div>
               </div>
               <div>
                 <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">MCAP</div>
-                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatUsd(token.marketCap)}</div>
+                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatUsd(t.marketCap)}</div>
               </div>
               <div>
                 <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">VOL 24H</div>
-                <div className="text-sm font-semibold text-xdex-green font-mono mt-0.5">{formatUsd(token.volume24h)}</div>
+                <div className="text-sm font-semibold text-xdex-green font-mono mt-0.5">
+                  {formatUsd(extendedData?.volumeUsd24h || t.volume24h)}
+                </div>
               </div>
               <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">TXNS</div>
-                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatNumber(token.txns24h)}</div>
+                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">TXNS 24H</div>
+                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatNumber(t.txns24h)}</div>
               </div>
               <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">MAKERS</div>
-                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatNumber(token.makers)}</div>
+                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">LP HOLDERS</div>
+                <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatNumber(t.lpHolderCount || t.makers)}</div>
               </div>
+              {extendedData?.txns7d ? (
+                <div>
+                  <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">TXNS 7D</div>
+                  <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatNumber(extendedData.txns7d)}</div>
+                </div>
+              ) : null}
+              {t.fee24h && t.fee24h > 0 ? (
+                <div>
+                  <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">FEES 24H</div>
+                  <div className="text-sm font-semibold text-white font-mono mt-0.5">{formatUsd(t.fee24h)}</div>
+                </div>
+              ) : null}
+              {t.apr24h && t.apr24h > 0 ? (
+                <div>
+                  <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">APR</div>
+                  <div className="text-sm font-semibold text-xdex-green font-mono mt-0.5">{t.apr24h.toFixed(1)}%</div>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -541,7 +688,7 @@ export default function TokenDetail({
             <div className="text-[10px] text-xdex-text-muted font-semibold uppercase tracking-wider mb-3">
               Price Calculator
             </div>
-            <div className="flex items-center gap-2 p-2.5 rounded-lg border border-xdex-border bg-black">
+            <div className="flex items-center gap-2 p-2.5 rounded-lg border border-xdex-border/60 bg-black focus-within:border-xdex-accent/30 transition-colors">
               <input
                 type="number"
                 value={calcAmount}
@@ -550,13 +697,13 @@ export default function TokenDetail({
                 style={{ boxShadow: 'none' }}
               />
               <span className="text-xs font-semibold text-xdex-text-secondary px-2 py-1 rounded bg-xdex-border/30">
-                {token.baseToken.symbol}
+                {t.baseToken.symbol}
               </span>
             </div>
             <div className="flex items-center justify-center py-1.5">
               <ArrowUpDown size={12} className="text-xdex-text-muted" />
             </div>
-            <div className="flex items-center gap-2 p-2.5 rounded-lg border border-xdex-border bg-black">
+            <div className="flex items-center gap-2 p-2.5 rounded-lg border border-xdex-border/60 bg-black">
               <span className="flex-1 text-white text-sm font-mono">
                 {calcResult < 0.01 && calcResult > 0 ? calcResult.toFixed(8) : calcResult.toFixed(2)}
               </span>
@@ -565,7 +712,7 @@ export default function TokenDetail({
               </span>
             </div>
             <div className="text-[10px] text-xdex-text-muted text-center mt-2 font-mono">
-              1 {token.baseToken.symbol} = {formatPrice(token.priceUsd)}
+              1 {t.baseToken.symbol} = {formatPrice(t.priceUsd)}
             </div>
           </div>
 
@@ -577,17 +724,29 @@ export default function TokenDetail({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-xdex-text-muted">Created</span>
-                <span className="text-xs text-white">{formatAge(token.createdAt)} ago</span>
+                <span className="text-xs text-white">{formatAge(t.createdAt)} ago</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-xdex-text-muted">DEX</span>
-                <span className="text-xs text-white">{token.dex}</span>
+                <span className="text-xs text-white uppercase">{t.dex}</span>
               </div>
+              {extendedData && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-xdex-text-muted">Pool {t.baseToken.symbol}</span>
+                    <span className="text-xs text-white font-mono">{formatNumber(Math.round(extendedData.amount2 || extendedData.amount1))}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-xdex-text-muted">Pool {t.quoteToken.symbol}</span>
+                    <span className="text-xs text-white font-mono">{formatNumber(Math.round(extendedData.amount1 || extendedData.amount2))}</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-xdex-text-muted">{token.baseToken.symbol}</span>
+                <span className="text-xs text-xdex-text-muted">{t.baseToken.symbol}</span>
                 <div className="flex items-center gap-1.5">
                   <code className="text-[10px] text-xdex-text-secondary font-mono">
-                    {token.baseToken.address.slice(0, 6)}...{token.baseToken.address.slice(-4)}
+                    {t.baseToken.address.slice(0, 6)}...{t.baseToken.address.slice(-4)}
                   </code>
                   <button
                     onClick={copyAddress}
@@ -598,9 +757,9 @@ export default function TokenDetail({
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-xdex-text-muted">{token.quoteToken.symbol}</span>
+                <span className="text-xs text-xdex-text-muted">{t.quoteToken.symbol}</span>
                 <code className="text-[10px] text-xdex-text-secondary font-mono">
-                  {token.quoteToken.address.slice(0, 6)}...{token.quoteToken.address.slice(-4)}
+                  {t.quoteToken.address.slice(0, 6)}...{t.quoteToken.address.slice(-4)}
                 </code>
               </div>
               {copied && (
@@ -618,15 +777,25 @@ export default function TokenDetail({
               className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-xdex-accent/20 text-xdex-accent hover:bg-xdex-accent/30 text-sm font-semibold transition-colors border border-xdex-accent/30"
             >
               <ArrowLeftRight size={14} />
-              Swap {token.baseToken.symbol}
+              Swap {t.baseToken.symbol}
             </button>
 
             <div className="flex items-center justify-center gap-4 mt-4">
-              <a href="#" className="flex items-center gap-1 text-xs text-xdex-text-muted hover:text-xdex-accent transition-colors">
-                <Globe size={12} /> Website
-              </a>
-              <a href="#" className="flex items-center gap-1 text-xs text-xdex-text-muted hover:text-xdex-accent transition-colors">
+              <a
+                href={`https://explorer.x1blockchain.org/address/${t.baseToken.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-xdex-text-muted hover:text-xdex-accent transition-colors"
+              >
                 <ExternalLink size={12} /> Explorer
+              </a>
+              <a
+                href={`https://app.xdex.xyz/swap?inputToken=${t.quoteToken.address}&outputToken=${t.baseToken.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-xdex-text-muted hover:text-xdex-accent transition-colors"
+              >
+                <Globe size={12} /> Trade on XDEX
               </a>
             </div>
 

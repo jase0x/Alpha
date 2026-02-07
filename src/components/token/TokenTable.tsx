@@ -14,7 +14,7 @@ interface TokenTableProps {
 }
 
 interface ColumnDef {
-  key: SortField | 'token' | 'swap';
+  key: SortField | 'token';
   label: string;
   align: 'left' | 'right' | 'center';
   width?: string;
@@ -22,19 +22,18 @@ interface ColumnDef {
 }
 
 const columns: ColumnDef[] = [
-  { key: 'token', label: 'TOKEN', align: 'left', width: 'w-[280px]', sortable: false },
-  { key: 'price', label: 'PRICE', align: 'right', width: 'w-[100px]', sortable: true },
-  { key: 'age', label: 'AGE', align: 'right', width: 'w-[60px]', sortable: true },
-  { key: 'txns', label: 'TXNS', align: 'right', width: 'w-[80px]', sortable: true },
-  { key: 'volume', label: 'VOLUME', align: 'right', width: 'w-[90px]', sortable: true },
-  { key: 'makers', label: 'MAKERS', align: 'right', width: 'w-[70px]', sortable: true },
-  { key: 'priceChange5m', label: '5M', align: 'right', width: 'w-[70px]', sortable: true },
-  { key: 'priceChange1h', label: '1H', align: 'right', width: 'w-[70px]', sortable: true },
-  { key: 'priceChange6h', label: '6H', align: 'right', width: 'w-[70px]', sortable: true },
-  { key: 'priceChange24h', label: '24H', align: 'right', width: 'w-[70px]', sortable: true },
-  { key: 'liquidity', label: 'LIQUIDITY', align: 'right', width: 'w-[90px]', sortable: true },
-  { key: 'marketCap', label: 'MCAP', align: 'right', width: 'w-[100px]', sortable: true },
-  { key: 'swap', label: '', align: 'center', width: 'w-10', sortable: false },
+  { key: 'token', label: 'TOKEN', align: 'left', sortable: false },
+  { key: 'price', label: 'PRICE', align: 'right', sortable: true },
+  { key: 'age', label: 'AGE', align: 'right', sortable: true },
+  { key: 'txns', label: 'TXNS', align: 'right', sortable: true },
+  { key: 'volume', label: 'VOLUME', align: 'right', sortable: true },
+  { key: 'makers', label: 'MAKERS', align: 'right', sortable: true },
+  { key: 'priceChange5m', label: '5M', align: 'right', sortable: true },
+  { key: 'priceChange1h', label: '1H', align: 'right', sortable: true },
+  { key: 'priceChange6h', label: '6H', align: 'right', sortable: true },
+  { key: 'priceChange24h', label: '24H', align: 'right', sortable: true },
+  { key: 'liquidity', label: 'LIQUIDITY', align: 'right', sortable: true },
+  { key: 'marketCap', label: 'MCAP', align: 'right', sortable: true },
 ];
 
 function getSortValue(token: TokenPair, field: SortField): number {
@@ -65,7 +64,7 @@ export default function TokenTable({
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
 
   const handleSort = (field: string) => {
-    if (field === 'token' || field === 'swap') return;
+    if (field === 'token') return;
     const sf = field as SortField;
     if (sortField === sf) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -88,15 +87,15 @@ export default function TokenTable({
 
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full min-w-[1100px]">
+      <table className="w-full" style={{ tableLayout: 'auto' }}>
         <thead className="sticky top-0 z-10">
           <tr className="bg-xdex-surface border-b border-xdex-border">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider ${
+                className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap ${
                   col.align === 'left' ? 'text-left' : col.align === 'right' ? 'text-right' : 'text-center'
-                } ${col.width || ''} ${
+                } ${
                   col.sortable
                     ? 'cursor-pointer select-none hover:text-xdex-accent transition-colors'
                     : ''

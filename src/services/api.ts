@@ -36,7 +36,7 @@ export async function fetchPoolList(chain: Chain): Promise<TokenPair[]> {
 }
 
 // ============================================================
-// Swap quote — for swap modal
+// Swap quote — sends raw token amounts to API
 // ============================================================
 
 export async function fetchSwapQuote(
@@ -44,18 +44,23 @@ export async function fetchSwapQuote(
   tokenIn: string,
   tokenOut: string,
   amountIn: number,
-): Promise<{ amountOut: number; rate: number } | null> {
+  tokenInDecimals: number = 9,
+): Promise<{ amountOut: number; rate: number; priceImpact: number } | null> {
   try {
     const network = getNetwork(chain);
+    // API expects raw amounts (with decimals applied)
+    const rawAmount = Math.floor(amountIn * Math.pow(10, tokenInDecimals));
     const res = await fetch(
-      `${XDEX_API}/api/xendex/swap/quote?network=${encodeURIComponent(network)}&token_in=${tokenIn}&token_out=${tokenOut}&token_in_amount=${amountIn}&is_exact_amount_in=true`,
+      `${XDEX_API}/api/xendex/swap/quote?network=${encodeURIComponent(network)}&token_in=${tokenIn}&token_out=${tokenOut}&token_in_amount=${rawAmount}&is_exact_amount_in=true`,
     );
     if (!res.ok) return null;
     const json = await res.json();
-    if (!json.success) return null;
+    if (!json.success || !json.data) return null;
+
     return {
-      amountOut: Number(json.data?.token_out_amount || 0),
-      rate: Number(json.data?.rate || 0),
+      amountOut: Number(json.data.outputAmount ?? json.data.token_out_amount ?? 0),
+      rate: Number(json.data.rate ?? 0),
+      priceImpact: Number(json.data.priceImpactPct ?? 0),
     };
   } catch {
     return null;
@@ -85,6 +90,36 @@ export async function fetchPoolDetail(
   }
 }
 
+// Fetch extended pool details (token amounts, 7d txns, volume)
+export async function fetchPoolDetails(
+  poolAddress: string,
+  chain: Chain,
+): Promise<{
+  amount1: number;
+  amount2: number;
+  volumeUsd24h: number;
+  txns7d: number;
+} | null> {
+  try {
+    const network = getNetwork(chain);
+    const res = await fetch(
+      `${XDEX_API}/api/xendex/pool/details?pool_address=${poolAddress}&network=${encodeURIComponent(network)}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.success || !json.data) return null;
+    return {
+      amount1: Number(json.data.amount1 || 0),
+      amount2: Number(json.data.amount2 || 0),
+      volumeUsd24h: Number(json.data.volume_24h?.usd || 0),
+      txns7d: Number(json.data.txns_7d || 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================
 // Token price
 // ============================================================
@@ -108,20 +143,108 @@ export async function fetchTokenPrice(
 }
 
 // ============================================================
-// OHLCV — generate from price data (API chart endpoints need params we don't have yet)
+// OHLCV — real chart data from XDEX chart/history API
 // ============================================================
 
 export async function fetchOHLCV(
-  _pairAddress: string,
-  _timeframe: string = '1h',
-  basePrice: number = 0.001,
+  token: TokenPair,
+  timeframe: string = '1h',
 ): Promise<OHLCVData[]> {
-  // Generate realistic OHLCV based on the token's current price
-  return generateOHLCVFromPrice(basePrice);
+  try {
+    const network = getNetwork(token.chain);
+    const fromToken = token.quoteToken.address;
+    const toToken = token.baseToken.address;
+
+    // Map timeframe to resolution and time range
+    const resolutionMap: Record<string, { resolution: string; seconds: number }> = {
+      '5m': { resolution: '5m', seconds: 6 * 3600 },
+      '15m': { resolution: '15m', seconds: 24 * 3600 },
+      '1h': { resolution: '1h', seconds: 7 * 24 * 3600 },
+      '4h': { resolution: '4h', seconds: 30 * 24 * 3600 },
+      '1d': { resolution: '1D', seconds: 180 * 24 * 3600 },
+    };
+
+    const config = resolutionMap[timeframe] || resolutionMap['1h'];
+    const timeTo = Math.floor(Date.now() / 1000);
+    const timeFrom = timeTo - config.seconds;
+
+    const url = `${XDEX_API}/api/xendex/chart/history?from_token=${fromToken}&to_token=${toToken}&resolution=${config.resolution}&time_from=${timeFrom}&time_to=${timeTo}&network=${encodeURIComponent(network)}`;
+    const res = await fetch(url, { cache: 'no-store' });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.bars && Array.isArray(json.bars) && json.bars.length > 0) {
+        return json.bars.map((bar: any) => ({
+          time: Number(bar.t),
+          open: Number(bar.o),
+          high: Number(bar.h),
+          low: Number(bar.l),
+          close: Number(bar.c),
+          volume: Number(bar.v || 0),
+        }));
+      }
+    }
+
+    // Try reversed token order
+    const url2 = `${XDEX_API}/api/xendex/chart/history?from_token=${toToken}&to_token=${fromToken}&resolution=${config.resolution}&time_from=${timeFrom}&time_to=${timeTo}&network=${encodeURIComponent(network)}`;
+    const res2 = await fetch(url2, { cache: 'no-store' });
+
+    if (res2.ok) {
+      const json2 = await res2.json();
+      if (json2.bars && Array.isArray(json2.bars) && json2.bars.length > 0) {
+        return json2.bars.map((bar: any) => {
+          const o = Number(bar.o);
+          const h = Number(bar.h);
+          const l = Number(bar.l);
+          const c = Number(bar.c);
+          return {
+            time: Number(bar.t),
+            open: o > 0 ? 1 / o : 0,
+            high: l > 0 ? 1 / l : 0,
+            low: h > 0 ? 1 / h : 0,
+            close: c > 0 ? 1 / c : 0,
+            volume: Number(bar.v || 0),
+          };
+        });
+      }
+    }
+
+    // Fallback to generated data
+    return generateOHLCVFromPrice(token.priceUsd);
+  } catch {
+    return generateOHLCVFromPrice(token.priceUsd);
+  }
 }
 
 // ============================================================
-// Search — client-side filter since API doesn't have a search endpoint
+// Pool status — aggregate stats
+// ============================================================
+
+export async function fetchPoolStatus(chain: Chain): Promise<{
+  poolCount: number;
+  totalHolders: number;
+  totalTx: number;
+} | null> {
+  try {
+    const network = getNetwork(chain);
+    const res = await fetch(
+      `${XDEX_API}/api/xendex/pool/status?network=${encodeURIComponent(network)}`,
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.success) return null;
+    return {
+      poolCount: Number(json.data?.pools_count || 0),
+      totalHolders: Number(json.data?.total_holders || 0),
+      totalTx: Number(json.data?.total_tx || 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================
+// Search — client-side filter
 // ============================================================
 
 export async function searchTokens(
@@ -149,54 +272,54 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
   const token2Price = p.token2_price != null ? Number(p.token2_price) : 0;
   const tvl = Number(p.tvl || 0);
 
-  // Determine which token is the "base" (non-native) and which is "quote" (native/stable)
   const isToken1Native = isNativeOrStable(p.token1_symbol);
   const isToken2Native = isNativeOrStable(p.token2_symbol);
-
-  // If neither is native, prefer the one with a known price as quote
   const swapOrder = isToken1Native || (!isToken2Native && token1Price > 0 && token2Price === 0);
 
   const baseSymbol = swapOrder ? (p.token2_symbol || '?') : (p.token1_symbol || '?');
   const baseName = swapOrder ? (p.token2_symbol || '') : (p.token1_symbol || '');
   const baseAddress = swapOrder ? (p.token2_address || '') : (p.token1_address || '');
   const baseLogo = swapOrder ? p.token2_logo : p.token1_logo;
+  const baseDecimals = swapOrder
+    ? Number(p.pool_info?.mint1Decimals ?? 9)
+    : Number(p.pool_info?.mint0Decimals ?? 9);
   const rawBasePrice = swapOrder ? token2Price : token1Price;
 
   const quoteSymbol = swapOrder ? (p.token1_symbol || '') : (p.token2_symbol || '');
   const quoteName = swapOrder ? (p.token1_symbol || '') : (p.token2_symbol || '');
   const quoteAddress = swapOrder ? (p.token1_address || '') : (p.token2_address || '');
   const quoteLogo = swapOrder ? p.token1_logo : p.token2_logo;
+  const quoteDecimals = swapOrder
+    ? Number(p.pool_info?.mint0Decimals ?? 9)
+    : Number(p.pool_info?.mint1Decimals ?? 9);
 
-  // Compute best price estimate:
-  // Use direct USD price if available, else derive from TVL (each side ≈ tvl/2)
   let priceUsd = rawBasePrice;
   if (priceUsd === 0 && tvl > 0) {
-    // Estimate: if token contributes ~half TVL, price = (tvl/2) / token_supply
-    // As a rough estimate, use the lp_price as a scaling factor
     const lpPrice = Number(p.lp_price || 0);
     if (lpPrice > 0) {
       priceUsd = lpPrice * 0.5;
     } else {
-      priceUsd = tvl / 1000; // rough fallback
+      priceUsd = tvl / 1000;
     }
   }
 
-  // Volume in USD
+  // Volume — use the real USD volume fields from API
   const vol1Usd = Number(p.token1_volume_usd_24h || 0);
   const vol2Usd = Number(p.token2_volume_usd_24h || 0);
   let volumeUsd = vol1Usd + vol2Usd;
 
-  // Compute total volume from trade amounts if USD volume is 0
   if (volumeUsd === 0) {
     const tradeVol1 = Number(p.token1_total_trade_amount || 0) * (token1Price || priceUsd);
     const tradeVol2 = Number(p.token2_total_trade_amount || 0) * (token2Price || priceUsd);
     volumeUsd = tradeVol1 + tradeVol2;
   }
 
-  const createdAt = p.createdAt ? new Date(p.createdAt).getTime() : Date.now();
+  // Transaction count — use the real txns_24h field directly
+  const txns24h = Number(p.txns_24h || 0);
 
-  // Estimate market cap from TVL (for AMM pools: marketCap ≈ TVL * ratio)
+  const createdAt = p.createdAt ? new Date(p.createdAt).getTime() : Date.now();
   const estimatedMcap = tvl > 0 ? tvl * 2 : 0;
+  const apr24h = Number(p.apr_24h || 0);
 
   return {
     address: p.pool_address || '',
@@ -205,12 +328,14 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
       symbol: baseSymbol,
       name: baseName,
       imageUrl: resolveLogoUrl(baseLogo),
+      decimals: baseDecimals,
     },
     quoteToken: {
       address: quoteAddress,
       symbol: quoteSymbol,
       name: quoteName,
       imageUrl: resolveLogoUrl(quoteLogo),
+      decimals: quoteDecimals,
     },
     chain,
     dex: 'xdex',
@@ -219,23 +344,22 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
     priceUsd,
     age: '',
     createdAt,
-    txns24h: Number(p.txns_24h || 0) || Math.floor(Number(p.token1_total_trade_amount || 0) + Number(p.token2_total_trade_amount || 0)),
+    txns24h,
     volume24h: volumeUsd,
     makers: Number(p.lp_token_holder_count || 0),
-    priceChange5m: Number(p.price_change_5m ?? 0) || generatePriceChange(0.5),
-    priceChange1h: Number(p.price_change_1h ?? 0) || generatePriceChange(1.5),
-    priceChange6h: Number(p.price_change_6h ?? 0) || generatePriceChange(4),
-    priceChange24h: Number(p.price_change_24h ?? 0) || Number(p.apr_24h || 0) / 365 || generatePriceChange(8),
+    priceChange5m: Number(p.price_change_5m ?? 0),
+    priceChange1h: Number(p.price_change_1h ?? 0),
+    priceChange6h: Number(p.price_change_6h ?? 0),
+    priceChange24h: Number(p.price_change_24h ?? 0) || (apr24h > 0 ? apr24h / 365 : 0),
     liquidity: tvl,
     marketCap: estimatedMcap,
     fdv: estimatedMcap,
     isVerified: false,
+    lpHolderCount: Number(p.lp_token_holder_count || 0),
+    fee24h: Number(p.token1_fee_24h || 0) + Number(p.token2_fee_24h || 0),
+    apr24h,
+    lpPrice: Number(p.lp_price || 0),
   };
-}
-
-// Seeded random price change — consistent per pool address hash
-function generatePriceChange(scale: number): number {
-  return (Math.random() - 0.45) * scale * 2;
 }
 
 function isNativeOrStable(symbol: string | undefined): boolean {
@@ -245,7 +369,7 @@ function isNativeOrStable(symbol: string | undefined): boolean {
 }
 
 // ============================================================
-// Generate OHLCV from a base price for chart display
+// Fallback: generate OHLCV from a base price
 // ============================================================
 
 function generateOHLCVFromPrice(basePrice: number): OHLCVData[] {
