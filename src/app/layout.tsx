@@ -1,0 +1,21 @@
+import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'Alpha | XDEX Token Screener',
+  description: 'Real-time token screener for X1 and Solana — powered by XDEX',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className="bg-xdex-bg text-xdex-text antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}

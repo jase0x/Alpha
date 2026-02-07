@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --xdex-bg: #080b11;
+  --xdex-surface: #0d1117;
+  --xdex-card: #111827;
+  --xdex-border: #1e2a3a;
+  --xdex-accent: #00d4aa;
+  --xdex-green: #10b981;
+  --xdex-red: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--xdex-bg);
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--xdex-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e2a3a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3a4e;
+}
+
+/* Token table row hover */
+.token-row {
+  transition: background-color 0.15s ease;
+}
+
+.token-row:hover {
+  background-color: rgba(0, 212, 170, 0.04);
+}
+
+/* Sidebar active state */
+.sidebar-item.active {
+  background: rgba(0, 212, 170, 0.1);
+  color: #00d4aa;
+  border-left: 2px solid #00d4aa;
+}
+
+/* Mini sparkline */
+.sparkline-up {
+  color: #10b981;
+}
+
+.sparkline-down {
+  color: #ef4444;
+}
+
+/* Pulse animation for live data */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.live-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Swap modal overlay */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Chain badge */
+.chain-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Table header sort indicator */
+.sort-active {
+  color: #00d4aa;
+}
+
+/* Search input focus glow */
+input:focus {
+  outline: none;
+  border-color: #00d4aa;
+  box-shadow: 0 0 0 1px rgba(0, 212, 170, 0.3);
+}
+
+/* Star/favorite animation */
+.star-btn {
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.star-btn:hover {
+  transform: scale(1.2);
+}
+
+.star-btn.favorited {
+  color: #f59e0b;
+}
