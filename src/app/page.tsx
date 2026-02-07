@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Search,
   Flame,
@@ -58,20 +59,36 @@ const filterTabs: {
 ];
 
 export default function AlphaPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-black"><div className="w-8 h-8 border-2 border-xdex-accent border-t-transparent rounded-full animate-spin" /></div>}>
+      <AlphaPageContent />
+    </Suspense>
+  );
+}
+
+function AlphaPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Separate data stores for each chain
   const [x1Tokens, setX1Tokens] = useState<TokenPair[]>([]);
   const [solanaTokens, setSolanaTokens] = useState<TokenPair[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeChain, setActiveChain] = useState<Chain>('x1');
-  const [activeView, setActiveView] = useState<FilterView>('all');
+  const [activeChain, setActiveChain] = useState<Chain>(
+    (searchParams.get('chain') as Chain) || 'x1'
+  );
+  const [activeView, setActiveView] = useState<FilterView>(
+    (searchParams.get('view') as FilterView) || 'all'
+  );
   const [trendingTimeframe, setTrendingTimeframe] = useState<TimeFilter>('24h');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedToken, setSelectedToken] = useState<TokenPair | null>(null);
   const [swapToken, setSwapToken] = useState<TokenPair | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const pendingTokenId = useRef<string | null>(searchParams.get('token'));
 
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
@@ -132,6 +149,30 @@ export default function AlphaPage() {
       } catch { /* ignore corrupt data */ }
     }
   }, []);
+
+  // Sync URL state — deep linking + browser back/forward
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeChain !== 'x1') params.set('chain', activeChain);
+    if (activeView !== 'all') params.set('view', activeView);
+    if (searchQuery) params.set('q', searchQuery);
+    if (selectedToken) params.set('token', selectedToken.address);
+    const qs = params.toString();
+    const url = qs ? `?${qs}` : '/';
+    router.replace(url, { scroll: false });
+  }, [activeChain, activeView, searchQuery, selectedToken, router]);
+
+  // Restore token from URL after data loads
+  useEffect(() => {
+    if (!pendingTokenId.current || loading) return;
+    const allPools = [...x1Tokens, ...solanaTokens];
+    const match = allPools.find((t) => t.address === pendingTokenId.current);
+    if (match) {
+      setSelectedToken(match);
+      setActiveChain(match.chain);
+    }
+    pendingTokenId.current = null;
+  }, [loading, x1Tokens, solanaTokens]);
 
   // Keyboard shortcut for search
   useEffect(() => {

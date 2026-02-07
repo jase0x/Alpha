@@ -45,6 +45,7 @@ type TxFilter = 'all' | 'buys' | 'sells' | 'lp';
 interface MockTx {
   id: number;
   date: string;
+  timestamp: string; // ISO timestamp
   type: 'Buy' | 'Sell' | 'Add LP' | 'Remove LP';
   totalUsd: number;
   tokens: number;
@@ -52,6 +53,7 @@ interface MockTx {
   usdPrice: number;
   quotePrice: number;
   maker: string;
+  txHash: string; // for explorer links
 }
 
 interface MockHolder {
@@ -65,6 +67,7 @@ interface MockHolder {
 function generateMockTxns(token: TokenPair): MockTx[] {
   const txns: MockTx[] = [];
   const count = Math.min(token.txns24h || 20, 50);
+  const now = Date.now();
 
   for (let i = 0; i < count; i++) {
     const isLP = Math.random() < 0.08;
@@ -76,16 +79,21 @@ function generateMockTxns(token: TokenPair): MockTx[] {
     const amount = Math.random() * 5 + 0.01;
     const tokens = amount / (token.priceUsd || 0.001);
     const elapsed = Math.floor(Math.random() * 86400000);
+    const txTime = new Date(now - elapsed);
     const hours = Math.floor(elapsed / 3600000);
     const mins = Math.floor((elapsed % 3600000) / 60000);
     const dateStr = hours > 0 ? `${hours}h ${mins}m ago` : `${mins}m ago`;
+    const timestamp = txTime.toISOString().replace('T', ' ').slice(0, 19);
 
     const addrParts = token.address || 'abcdefghijklmnop';
     const makerAddr = `${addrParts.slice(0, 4)}...${String(i).padStart(4, '0').slice(-4)}`;
+    // Generate a mock tx hash for explorer links
+    const txHash = `${addrParts.slice(0, 8)}${String(i).padStart(8, '0')}${'a'.repeat(48)}`.slice(0, 64);
 
     txns.push({
       id: i,
       date: dateStr,
+      timestamp,
       type,
       totalUsd: amount,
       tokens,
@@ -93,6 +101,7 @@ function generateMockTxns(token: TokenPair): MockTx[] {
       usdPrice: token.priceUsd,
       quotePrice: token.price || 0,
       maker: makerAddr,
+      txHash,
     });
   }
   return txns;
@@ -207,9 +216,15 @@ export default function TokenDetail({
 
   // Risk signals
   const isLowLiquidity = t.liquidity < 1000;
+  const isShallowLiquidity = t.liquidity >= 1000 && t.liquidity < 10000;
   const isHighVolatility = Math.abs(t.priceChange24h) > 20;
   const isNew = (Date.now() - t.createdAt) < 7 * 86400000;
   const isVeryNew = (Date.now() - t.createdAt) < 24 * 3600000;
+  const hasUnusualDecimals = (t.baseToken.decimals ?? 9) !== 9 && (t.baseToken.decimals ?? 9) !== 6;
+  const hasSmallPrice = t.priceUsd > 0 && t.priceUsd < 0.00001;
+
+  // Liquidity depth classification
+  const liquidityDepth = t.liquidity >= 100000 ? 'deep' : t.liquidity >= 10000 ? 'moderate' : t.liquidity >= 1000 ? 'shallow' : 'thin';
 
   // Price calculator
   const calcResult = useMemo(() => {
@@ -370,7 +385,7 @@ export default function TokenDetail({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-7 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
+                  <div className="grid grid-cols-8 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
                     <span>Date</span>
                     <span>Type</span>
                     <span className="text-right">Total USD</span>
@@ -378,14 +393,15 @@ export default function TokenDetail({
                     <span className="text-right">{t.quoteToken.symbol}</span>
                     <span className="text-right">USD Price</span>
                     <span className="text-right">Maker</span>
+                    <span className="text-right">TX</span>
                   </div>
 
                   {filteredTxns.map((tx) => (
                     <div
                       key={tx.id}
-                      className="grid grid-cols-7 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
+                      className="grid grid-cols-8 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
                     >
-                      <span className="text-xdex-text-muted">{tx.date}</span>
+                      <span className="text-xdex-text-muted" title={tx.timestamp}>{tx.date}</span>
                       <span className={
                         tx.type === 'Buy' ? 'text-xdex-green font-medium' :
                         tx.type === 'Sell' ? 'text-xdex-red font-medium' :
@@ -398,6 +414,17 @@ export default function TokenDetail({
                       <span className="text-right text-xdex-text-secondary font-mono">{tx.quoteAmount.toFixed(4)}</span>
                       <span className="text-right text-white font-mono">{formatPrice(tx.usdPrice)}</span>
                       <span className="text-right text-xdex-accent font-mono cursor-pointer hover:underline">{tx.maker}</span>
+                      <span className="text-right">
+                        <a
+                          href={`https://explorer.x1blockchain.org/tx/${tx.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xdex-text-muted hover:text-xdex-accent transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink size={10} />
+                        </a>
+                      </span>
                     </div>
                   ))}
 
@@ -572,12 +599,18 @@ export default function TokenDetail({
           </div>
 
           {/* Risk/Safety signals */}
-          {(isLowLiquidity || isHighVolatility || isVeryNew) && (
+          {(isLowLiquidity || isShallowLiquidity || isHighVolatility || isVeryNew || hasUnusualDecimals || hasSmallPrice) && (
             <div className="px-5 py-3 border-b border-xdex-border space-y-1.5">
               {isLowLiquidity && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-red/5 border border-xdex-red/15">
+                  <AlertTriangle size={12} className="text-xdex-red flex-shrink-0" />
+                  <span className="text-[10px] text-xdex-red">Thin liquidity ({formatUsd(t.liquidity)}) — very high slippage risk</span>
+                </div>
+              )}
+              {isShallowLiquidity && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
                   <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
-                  <span className="text-[10px] text-yellow-400">Low liquidity — high slippage risk</span>
+                  <span className="text-[10px] text-yellow-400">Shallow liquidity ({formatUsd(t.liquidity)}) — moderate slippage risk</span>
                 </div>
               )}
               {isHighVolatility && (
@@ -592,8 +625,48 @@ export default function TokenDetail({
                   <span className="text-[10px] text-xdex-accent">Recently deployed — {formatAge(t.createdAt)} ago</span>
                 </div>
               )}
+              {hasUnusualDecimals && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
+                  <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
+                  <span className="text-[10px] text-yellow-400">Non-standard decimals ({t.baseToken.decimals}) — check precision</span>
+                </div>
+              )}
+              {hasSmallPrice && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
+                  <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
+                  <span className="text-[10px] text-yellow-400">Very small price — rounding may affect precision</span>
+                </div>
+              )}
             </div>
           )}
+
+          {/* Liquidity depth indicator */}
+          <div className="px-5 py-3 border-b border-xdex-border">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] text-xdex-text-muted font-semibold uppercase">Liquidity Depth</span>
+              <span className={`text-[10px] font-semibold ${
+                liquidityDepth === 'deep' ? 'text-xdex-green' :
+                liquidityDepth === 'moderate' ? 'text-xdex-accent' :
+                liquidityDepth === 'shallow' ? 'text-yellow-400' : 'text-xdex-red'
+              }`}>
+                {liquidityDepth.charAt(0).toUpperCase() + liquidityDepth.slice(1)}
+              </span>
+            </div>
+            <div className="h-1.5 bg-xdex-border/30 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  liquidityDepth === 'deep' ? 'bg-xdex-green' :
+                  liquidityDepth === 'moderate' ? 'bg-xdex-accent' :
+                  liquidityDepth === 'shallow' ? 'bg-yellow-400' : 'bg-xdex-red'
+                }`}
+                style={{ width: `${Math.min(100, Math.max(5, (t.liquidity / 100000) * 100))}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-[9px] text-xdex-text-muted">$0</span>
+              <span className="text-[9px] text-xdex-text-muted">$100K+</span>
+            </div>
+          </div>
 
           {/* Wallet context placeholder */}
           <div className="px-5 py-3 border-b border-xdex-border">

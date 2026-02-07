@@ -304,6 +304,25 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
             </div>
           )}
 
+          {/* Decimal precision warning */}
+          {((fromToken.decimals ?? 9) !== 9 && (fromToken.decimals ?? 9) !== 6) && (
+            <div className="flex items-center gap-2 p-3 rounded-xl border bg-yellow-400/5 border-yellow-400/20 text-yellow-400 mt-1">
+              <AlertTriangle size={14} />
+              <span className="text-[11px] font-medium">
+                Non-standard decimals ({fromToken.decimals}) — check amounts carefully
+              </span>
+            </div>
+          )}
+
+          {/* Transaction simulation note */}
+          {fromAmount && Number(fromAmount) > 0 && !loading && toAmount && (
+            <div className="text-center mt-1">
+              <span className="text-[9px] text-xdex-text-muted">
+                Quote simulated on-chain via XDEX AMM
+              </span>
+            </div>
+          )}
+
           {/* Swap button */}
           <button
             onClick={handleSwap}
