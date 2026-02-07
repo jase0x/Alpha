@@ -215,13 +215,13 @@ export function analyzeRugRisk(token: TokenPair): RugAnalysis {
     icon = 'skull';
   } else if (riskScore >= 40) {
     riskLevel = 'high';
-    color = 'text-orange-400';
-    bgColor = 'bg-orange-400/15';
+    color = 'text-xdex-orange';
+    bgColor = 'bg-xdex-orange/15';
     icon = 'warning';
   } else if (riskScore >= 20) {
     riskLevel = 'medium';
-    color = 'text-yellow-400';
-    bgColor = 'bg-yellow-400/15';
+    color = 'text-xdex-yellow';
+    bgColor = 'bg-xdex-yellow/15';
     icon = 'caution';
   } else if (riskScore >= 5) {
     riskLevel = 'low';

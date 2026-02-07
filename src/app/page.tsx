@@ -75,10 +75,10 @@ const filterTabs: {
   activeColor: string;
 }[] = [
   { id: 'all', label: 'All Pairs', icon: Layers, activeColor: 'text-xdex-accent border-xdex-accent' },
-  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-orange-400 border-orange-400' },
+  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-xdex-orange border-xdex-orange' },
   { id: 'gainers', label: 'Gainers', icon: TrendingUp, activeColor: 'text-xdex-green border-xdex-green' },
   { id: 'losers', label: 'Losers', icon: TrendingDown, activeColor: 'text-xdex-red border-xdex-red' },
-  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-yellow-400 border-yellow-400' },
+  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-xdex-yellow border-xdex-yellow' },
 ];
 
 const filterViewIds: FilterView[] = ['all', 'new', 'gainers', 'losers', 'watchlist'];

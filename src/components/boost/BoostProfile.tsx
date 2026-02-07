@@ -40,7 +40,7 @@ const statusConfig: Record<
   string,
   { label: string; color: string; icon: React.ComponentType<any> }
 > = {
-  pending: { label: 'Pending', color: 'text-yellow-400', icon: Clock },
+  pending: { label: 'Pending', color: 'text-xdex-yellow', icon: Clock },
   active: { label: 'Active', color: 'text-xdex-green', icon: CheckCircle2 },
   expired: { label: 'Expired', color: 'text-xdex-text-muted', icon: Clock },
   cancelled: { label: 'Cancelled', color: 'text-xdex-red', icon: XCircle },

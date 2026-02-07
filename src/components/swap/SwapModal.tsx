@@ -154,7 +154,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
               </div>
             </div>
             {slippage > 5 && (
-              <div className="flex items-center gap-1.5 mt-2 text-yellow-400">
+              <div className="flex items-center gap-1.5 mt-2 text-xdex-yellow">
                 <AlertTriangle size={11} />
                 <span className="text-[10px]">High slippage may result in unfavorable trade</span>
               </div>
@@ -262,7 +262,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
                   <span className="text-xdex-text-muted">Price impact</span>
                   <span className={`font-mono font-medium ${
                     impactSeverity === 'high' ? 'text-xdex-red' :
-                    impactSeverity === 'medium' ? 'text-yellow-400' :
+                    impactSeverity === 'medium' ? 'text-xdex-yellow' :
                     'text-xdex-green'
                   }`}>
                     {priceImpact.toFixed(2)}%
@@ -270,7 +270,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
                 </div>
               )}
               {quoteError && (
-                <div className="flex items-center gap-1.5 pt-1 text-yellow-400/80">
+                <div className="flex items-center gap-1.5 pt-1 text-xdex-yellow/80">
                   <AlertTriangle size={10} />
                   <span className="text-[10px]">Estimated rate — live quote unavailable</span>
                 </div>
@@ -283,7 +283,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
             <div className={`flex items-center gap-2 p-3 rounded-xl border mt-1 ${
               impactSeverity === 'high'
                 ? 'bg-xdex-red/10 border-xdex-red/30 text-xdex-red'
-                : 'bg-yellow-400/10 border-yellow-400/30 text-yellow-400'
+                : 'bg-xdex-yellow/10 border-xdex-yellow/30 text-xdex-yellow'
             }`}>
               <AlertTriangle size={14} />
               <span className="text-[11px] font-medium">
@@ -296,7 +296,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
 
           {/* Low liquidity warning */}
           {token.liquidity < 1000 && (
-            <div className="flex items-center gap-2 p-3 rounded-xl border bg-yellow-400/5 border-yellow-400/20 text-yellow-400 mt-1">
+            <div className="flex items-center gap-2 p-3 rounded-xl border bg-xdex-yellow/5 border-xdex-yellow/20 text-xdex-yellow mt-1">
               <AlertTriangle size={14} />
               <span className="text-[11px] font-medium">
                 Low liquidity pool — trades may have high slippage
@@ -306,7 +306,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
 
           {/* Decimal precision warning */}
           {((fromToken.decimals ?? 9) !== 9 && (fromToken.decimals ?? 9) !== 6) && (
-            <div className="flex items-center gap-2 p-3 rounded-xl border bg-yellow-400/5 border-yellow-400/20 text-yellow-400 mt-1">
+            <div className="flex items-center gap-2 p-3 rounded-xl border bg-xdex-yellow/5 border-xdex-yellow/20 text-xdex-yellow mt-1">
               <AlertTriangle size={14} />
               <span className="text-[11px] font-medium">
                 Non-standard decimals ({fromToken.decimals}) — check amounts carefully

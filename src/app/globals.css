@@ -12,6 +12,7 @@
   --xdex-accent: #0566ea;
   --xdex-green: #22c55e;
   --xdex-red: #ff1744;
+  --xdex-yellow: #e68a00;
 }
 
 * {
@@ -22,7 +23,7 @@ html, body {
   margin: 0;
   padding: 0;
   background: #000000;
-  color: #e6e6e6;
+  color: #e8e8e8;
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
 }
 
@@ -115,7 +116,7 @@ input:focus {
 }
 
 .star-btn.favorited {
-  color: #f59e0b;
+  color: #e68a00;
 }
 
 /* Trending banner smooth scroll */
@@ -147,7 +148,7 @@ input:focus {
   position: relative;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--boost-color, #f59e0b) 4%, transparent),
+    color-mix(in srgb, var(--boost-color, #e68a00) 4%, transparent),
     transparent 60%
   );
 }
@@ -155,14 +156,14 @@ input:focus {
 .boosted-row:hover {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--boost-color, #f59e0b) 8%, transparent),
+    color-mix(in srgb, var(--boost-color, #e68a00) 8%, transparent),
     transparent 60%
   ) !important;
 }
 
 @keyframes boost-pulse {
-  0%, 100% { box-shadow: inset 2px 0 8px -4px var(--boost-color, #f59e0b); }
-  50% { box-shadow: inset 2px 0 12px -2px var(--boost-color, #f59e0b); }
+  0%, 100% { box-shadow: inset 2px 0 8px -4px var(--boost-color, #e68a00); }
+  50% { box-shadow: inset 2px 0 12px -2px var(--boost-color, #e68a00); }
 }
 
 .boosted-row {

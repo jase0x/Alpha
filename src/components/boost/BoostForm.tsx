@@ -546,9 +546,9 @@ export default function BoostForm({
               </div>
 
               {/* Disclaimer */}
-              <div className="flex items-start gap-2 p-3 rounded-xl border border-yellow-400/20 bg-yellow-400/5">
-                <AlertTriangle size={14} className="text-yellow-400 flex-shrink-0 mt-0.5" />
-                <span className="text-[10px] text-yellow-400/80 leading-relaxed">
+              <div className="flex items-start gap-2 p-3 rounded-xl border border-xdex-yellow/20 bg-xdex-yellow/5">
+                <AlertTriangle size={14} className="text-xdex-yellow flex-shrink-0 mt-0.5" />
+                <span className="text-[10px] text-xdex-yellow/80 leading-relaxed">
                   Boost is activated immediately for demo purposes. In production,
                   payment verification will be required before activation.
                 </span>

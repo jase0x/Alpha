@@ -34,7 +34,7 @@ const icons: Record<ToastType, React.ComponentType<any>> = {
 const colors: Record<ToastType, string> = {
   success: 'border-xdex-green/40 bg-xdex-green/10 text-xdex-green',
   error: 'border-xdex-red/40 bg-xdex-red/10 text-xdex-red',
-  warning: 'border-yellow-400/40 bg-yellow-400/10 text-yellow-400',
+  warning: 'border-xdex-yellow/40 bg-xdex-yellow/10 text-xdex-yellow',
   info: 'border-xdex-accent/40 bg-xdex-accent/10 text-xdex-accent',
 };
 

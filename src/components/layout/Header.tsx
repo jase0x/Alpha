@@ -68,12 +68,12 @@ export default function Header({ tokens, allTokens, onTokenClick }: HeaderProps)
         })),
       },
       {
-        icon: <Flame size={12} className="text-orange-400" />,
+        icon: <Flame size={12} className="text-xdex-orange" />,
         label: 'Hot',
         tokens: hot.map((t) => ({
           symbol: t.baseToken.symbol,
           value: formatUsd(t.volume24h),
-          color: 'text-orange-400',
+          color: 'text-xdex-orange',
           imageUrl: t.baseToken.imageUrl,
           tokenRef: t,
         })),
@@ -90,7 +90,7 @@ export default function Header({ tokens, allTokens, onTokenClick }: HeaderProps)
         })),
       },
       {
-        icon: <Zap size={12} className="text-yellow-400" />,
+        icon: <Zap size={12} className="text-xdex-yellow" />,
         label: 'Volume',
         tokens: [
           { symbol: '24H Vol', value: formatUsd(totalVolume), color: 'text-white' },

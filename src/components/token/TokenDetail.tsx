@@ -667,7 +667,7 @@ export default function TokenDetail({
                       <span className="text-xdex-accent text-[10px]">&#10003;</span>
                     )}
                     {!t.isVerified && (
-                      <span className="text-[8px] px-1 py-0.5 rounded bg-yellow-400/10 text-yellow-400/70">Unverified</span>
+                      <span className="text-[8px] px-1 py-0.5 rounded bg-xdex-yellow/10 text-xdex-yellow/70">Unverified</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -682,7 +682,7 @@ export default function TokenDetail({
                 <button
                   onClick={() => onFavorite(t.address)}
                   className={`p-1.5 rounded-lg hover:bg-white/5 transition-colors ${
-                    isFavorited ? 'text-yellow-400' : 'text-xdex-text-muted'
+                    isFavorited ? 'text-xdex-yellow' : 'text-xdex-text-muted'
                   }`}
                 >
                   <Star size={16} fill={isFavorited ? 'currentColor' : 'none'} />
@@ -745,8 +745,8 @@ export default function TokenDetail({
                 className={`h-full rounded-full transition-all ${
                   safety.score >= 80 ? 'bg-xdex-green' :
                   safety.score >= 60 ? 'bg-emerald-400' :
-                  safety.score >= 40 ? 'bg-yellow-400' :
-                  safety.score >= 20 ? 'bg-orange-400' : 'bg-xdex-red'
+                  safety.score >= 40 ? 'bg-xdex-yellow' :
+                  safety.score >= 20 ? 'bg-xdex-orange' : 'bg-xdex-red'
                 }`}
                 style={{ width: `${safety.score}%` }}
               />
@@ -755,7 +755,7 @@ export default function TokenDetail({
               <div className="space-y-1">
                 {safety.risks.map((risk, i) => (
                   <div key={i} className="flex items-start gap-1.5">
-                    <AlertTriangle size={9} className="text-yellow-400/70 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle size={9} className="text-xdex-yellow/70 mt-0.5 flex-shrink-0" />
                     <span className="text-[10px] text-xdex-text-muted">{risk}</span>
                   </div>
                 ))}
@@ -785,19 +785,19 @@ export default function TokenDetail({
                     key={flag.id}
                     className={`flex items-start gap-2 p-1.5 rounded ${
                       flag.severity === 'danger' ? 'bg-xdex-red/5 border border-xdex-red/15' :
-                      flag.severity === 'warning' ? 'bg-yellow-400/5 border border-yellow-400/15' :
+                      flag.severity === 'warning' ? 'bg-xdex-yellow/5 border border-xdex-yellow/15' :
                       'bg-xdex-border/10 border border-xdex-border/20'
                     }`}
                   >
                     <AlertTriangle size={9} className={`mt-0.5 flex-shrink-0 ${
                       flag.severity === 'danger' ? 'text-xdex-red' :
-                      flag.severity === 'warning' ? 'text-yellow-400' :
+                      flag.severity === 'warning' ? 'text-xdex-yellow' :
                       'text-xdex-text-muted'
                     }`} />
                     <div>
                       <span className={`text-[10px] font-semibold block ${
                         flag.severity === 'danger' ? 'text-xdex-red' :
-                        flag.severity === 'warning' ? 'text-yellow-400' :
+                        flag.severity === 'warning' ? 'text-xdex-yellow' :
                         'text-xdex-text-secondary'
                       }`}>{flag.label}</span>
                       <span className="text-[9px] text-xdex-text-muted">{flag.description}</span>
@@ -953,9 +953,9 @@ export default function TokenDetail({
                 </div>
               )}
               {isShallowLiquidity && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
-                  <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
-                  <span className="text-[10px] text-yellow-400">Shallow liquidity ({formatUsd(t.liquidity)}) — moderate slippage risk</span>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-yellow/5 border border-xdex-yellow/15">
+                  <AlertTriangle size={12} className="text-xdex-yellow flex-shrink-0" />
+                  <span className="text-[10px] text-xdex-yellow">Shallow liquidity ({formatUsd(t.liquidity)}) — moderate slippage risk</span>
                 </div>
               )}
               {isHighVolatility && (
@@ -971,15 +971,15 @@ export default function TokenDetail({
                 </div>
               )}
               {hasUnusualDecimals && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
-                  <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
-                  <span className="text-[10px] text-yellow-400">Non-standard decimals ({t.baseToken.decimals}) — check precision</span>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-yellow/5 border border-xdex-yellow/15">
+                  <AlertTriangle size={12} className="text-xdex-yellow flex-shrink-0" />
+                  <span className="text-[10px] text-xdex-yellow">Non-standard decimals ({t.baseToken.decimals}) — check precision</span>
                 </div>
               )}
               {hasSmallPrice && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
-                  <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
-                  <span className="text-[10px] text-yellow-400">Very small price — rounding may affect precision</span>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-yellow/5 border border-xdex-yellow/15">
+                  <AlertTriangle size={12} className="text-xdex-yellow flex-shrink-0" />
+                  <span className="text-[10px] text-xdex-yellow">Very small price — rounding may affect precision</span>
                 </div>
               )}
             </div>
@@ -992,7 +992,7 @@ export default function TokenDetail({
               <span className={`text-[10px] font-semibold ${
                 liquidityDepth === 'deep' ? 'text-xdex-green' :
                 liquidityDepth === 'moderate' ? 'text-xdex-accent' :
-                liquidityDepth === 'shallow' ? 'text-yellow-400' : 'text-xdex-red'
+                liquidityDepth === 'shallow' ? 'text-xdex-yellow' : 'text-xdex-red'
               }`}>
                 {liquidityDepth.charAt(0).toUpperCase() + liquidityDepth.slice(1)}
               </span>
@@ -1002,7 +1002,7 @@ export default function TokenDetail({
                 className={`h-full rounded-full transition-all ${
                   liquidityDepth === 'deep' ? 'bg-xdex-green' :
                   liquidityDepth === 'moderate' ? 'bg-xdex-accent' :
-                  liquidityDepth === 'shallow' ? 'bg-yellow-400' : 'bg-xdex-red'
+                  liquidityDepth === 'shallow' ? 'bg-xdex-yellow' : 'bg-xdex-red'
                 }`}
                 style={{ width: `${Math.min(100, Math.max(5, (t.liquidity / 100000) * 100))}%` }}
               />
@@ -1031,7 +1031,7 @@ export default function TokenDetail({
             <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">LIQ</div>
-                <div className={`text-sm font-semibold font-mono mt-0.5 ${isLowLiquidity ? 'text-yellow-400' : 'text-xdex-accent'}`}>
+                <div className={`text-sm font-semibold font-mono mt-0.5 ${isLowLiquidity ? 'text-xdex-yellow' : 'text-xdex-accent'}`}>
                   {formatUsd(t.liquidity)}
                 </div>
               </div>

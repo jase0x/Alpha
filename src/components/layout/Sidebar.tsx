@@ -17,29 +17,8 @@ import {
 } from 'lucide-react';
 import DegenLogo from '@/components/ui/DegenLogo';
 
-// XDEX hexagon X logo mark
-function XdexHexLogo({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200" fill="none">
-      <defs>
-        <linearGradient id="xdex-sidebar-logo" x1="50" y1="0" x2="150" y2="200" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00BFFF" />
-          <stop offset="100%" stopColor="#0566ea" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M100 10 L180 55 L180 145 L100 190 L20 145 L20 55 Z"
-        stroke="url(#xdex-sidebar-logo)"
-        strokeWidth="14"
-        fill="none"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M62 65 L82 100 L62 135 H80 L100 108 L120 135 H138 L118 100 L138 65 H120 L100 92 L80 65 Z"
-        fill="url(#xdex-sidebar-logo)"
-      />
-    </svg>
-  );
+function XdexLogo({ size }: { size: number }) {
+  return <img src="https://app.xdex.xyz/logo/logo.png" alt="XDEX" style={{ width: size, height: size }} className="object-contain" />;
 }
 
 interface SidebarProps {
@@ -86,7 +65,7 @@ export default function Sidebar({
       {/* XDEX Logo */}
       <div className="flex items-center px-3 h-14 border-b border-xdex-border">
         <div className="flex items-center gap-2">
-          <XdexHexLogo size={collapsed ? 26 : 28} />
+          <XdexLogo size={collapsed ? 26 : 28} />
           {!collapsed && (
             <span className="text-white font-bold text-lg tracking-tight">XDEX</span>
           )}
@@ -188,7 +167,7 @@ export default function Sidebar({
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
-          <DegenLogo size={18} color="#ffffff" />
+          <DegenLogo size={18} />
           {!collapsed && <span>Degen LaunchPad</span>}
         </a>
       </div>
