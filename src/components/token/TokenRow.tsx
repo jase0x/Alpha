@@ -95,7 +95,7 @@ export default function TokenRow({
 
       {/* Price */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-white font-mono">
+        <span className="text-sm text-white font-mono font-medium">
           {formatPrice(token.priceUsd)}
         </span>
       </td>
@@ -109,63 +109,63 @@ export default function TokenRow({
 
       {/* TXNS */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-text-secondary font-mono">
+        <span className="text-sm text-xdex-accent font-mono">
           {formatNumber(token.txns24h)}
         </span>
       </td>
 
       {/* Volume */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-white font-mono">
+        <span className="text-sm text-xdex-green font-mono font-medium">
           {formatUsd(token.volume24h)}
         </span>
       </td>
 
       {/* Makers */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-text-secondary font-mono">
+        <span className="text-sm text-xdex-accent font-mono">
           {formatNumber(token.makers)}
         </span>
       </td>
 
       {/* 5m change */}
       <td className="px-3 py-3 text-right">
-        <span className={`text-sm font-mono ${getPercentColor(token.priceChange5m)}`}>
+        <span className={`text-sm font-mono font-medium ${getPercentColor(token.priceChange5m)}`}>
           {formatPercent(token.priceChange5m)}
         </span>
       </td>
 
       {/* 1h change */}
       <td className="px-3 py-3 text-right">
-        <span className={`text-sm font-mono ${getPercentColor(token.priceChange1h)}`}>
+        <span className={`text-sm font-mono font-medium ${getPercentColor(token.priceChange1h)}`}>
           {formatPercent(token.priceChange1h)}
         </span>
       </td>
 
       {/* 6h change */}
       <td className="px-3 py-3 text-right">
-        <span className={`text-sm font-mono ${getPercentColor(token.priceChange6h)}`}>
+        <span className={`text-sm font-mono font-medium ${getPercentColor(token.priceChange6h)}`}>
           {formatPercent(token.priceChange6h)}
         </span>
       </td>
 
       {/* 24h change */}
       <td className="px-3 py-3 text-right">
-        <span className={`text-sm font-mono ${getPercentColor(token.priceChange24h)}`}>
+        <span className={`text-sm font-mono font-medium ${getPercentColor(token.priceChange24h)}`}>
           {formatPercent(token.priceChange24h)}
         </span>
       </td>
 
       {/* Liquidity */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-xdex-text-secondary font-mono">
+        <span className="text-sm text-xdex-accent font-mono">
           {formatUsd(token.liquidity)}
         </span>
       </td>
 
       {/* Market cap */}
       <td className="px-3 py-3 text-right">
-        <span className="text-sm text-white font-mono">
+        <span className="text-sm text-white font-mono font-medium">
           {formatUsd(token.marketCap)}
         </span>
       </td>

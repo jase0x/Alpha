@@ -4,10 +4,11 @@ import { useState } from 'react';
 import {
   Search,
   Flame,
-  ArrowUpCircle,
-  ArrowDownCircle,
+  TrendingUp,
+  TrendingDown,
   Bookmark,
   Layers,
+  Rocket,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -31,12 +32,13 @@ const navItems: {
   id: FilterView;
   label: string;
   icon: React.ComponentType<any>;
+  activeColor: string;
 }[] = [
-  { id: 'all', label: 'All Pairs', icon: Layers },
-  { id: 'new', label: 'New Pairs', icon: Flame },
-  { id: 'gainers', label: 'Gainers', icon: ArrowUpCircle },
-  { id: 'losers', label: 'Losers', icon: ArrowDownCircle },
-  { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
+  { id: 'all', label: 'All Pairs', icon: Layers, activeColor: 'text-xdex-accent' },
+  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-orange-400' },
+  { id: 'gainers', label: 'Gainers', icon: TrendingUp, activeColor: 'text-xdex-green' },
+  { id: 'losers', label: 'Losers', icon: TrendingDown, activeColor: 'text-xdex-red' },
+  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-yellow-400' },
 ];
 
 export default function Sidebar({
@@ -50,37 +52,46 @@ export default function Sidebar({
   return (
     <aside
       className={`flex flex-col h-full bg-black border-r border-xdex-border transition-all duration-200 ${
-        collapsed ? 'w-14' : 'w-52'
+        collapsed ? 'w-14' : 'w-56'
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-3 h-14 border-b border-xdex-border">
-        <DegenLogo size={collapsed ? 28 : 32} />
+      <div className="flex items-center gap-2.5 px-3 h-14 border-b border-xdex-border">
+        <DegenLogo size={collapsed ? 26 : 30} color="#ffffff" />
         {!collapsed && (
           <span className="text-base font-bold text-white tracking-tight">Degen</span>
         )}
       </div>
 
       {/* Search */}
-      <div className="px-3 py-3 border-b border-xdex-border">
+      <div className="px-3 py-3">
         <button
           onClick={onSearchOpen}
-          className={`flex items-center gap-2 w-full text-xdex-text-muted hover:text-xdex-text transition-colors ${
-            collapsed ? 'justify-center' : ''
+          className={`flex items-center gap-2 w-full px-2.5 py-2 rounded-lg bg-xdex-card border border-xdex-border/50 text-xdex-text-muted hover:text-xdex-text hover:border-xdex-border transition-colors ${
+            collapsed ? 'justify-center px-0' : ''
           }`}
         >
-          <Search size={15} className="flex-shrink-0" />
+          <Search size={14} className="flex-shrink-0" />
           {!collapsed && (
             <>
-              <span className="text-sm">Search...</span>
-              <span className="ml-auto text-[10px] text-xdex-text-muted opacity-50">/</span>
+              <span className="text-xs">Search tokens...</span>
+              <span className="ml-auto text-[10px] bg-xdex-border/50 px-1.5 py-0.5 rounded text-xdex-text-muted">/</span>
             </>
           )}
         </button>
       </div>
 
+      {/* Section label */}
+      {!collapsed && (
+        <div className="px-4 pb-1.5 pt-1">
+          <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
+            Screener
+          </span>
+        </div>
+      )}
+
       {/* Navigation */}
-      <nav className="flex-1 py-3">
+      <nav className="flex-1 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const count = pairCounts[item.id];
@@ -90,18 +101,22 @@ export default function Sidebar({
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className={`flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] transition-colors ${
+              className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all ${
                 isActive
-                  ? 'text-xdex-accent'
-                  : 'text-xdex-text-secondary hover:text-xdex-text'
+                  ? `${item.activeColor} bg-white/5`
+                  : 'text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03]'
               } ${collapsed ? 'justify-center px-0' : ''}`}
             >
-              <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} className="flex-shrink-0" />
+              <Icon size={16} strokeWidth={isActive ? 2.2 : 1.6} className="flex-shrink-0" />
               {!collapsed && (
                 <>
-                  <span>{item.label}</span>
+                  <span className="font-medium">{item.label}</span>
                   {count > 0 && (
-                    <span className="ml-auto text-[11px] text-xdex-text-muted">
+                    <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full ${
+                      isActive
+                        ? 'bg-white/10'
+                        : 'bg-xdex-border/40 text-xdex-text-muted'
+                    }`}>
                       {count}
                     </span>
                   )}
@@ -110,32 +125,40 @@ export default function Sidebar({
             </button>
           );
         })}
+
+        {/* Divider */}
+        <div className="my-3 mx-2 border-t border-xdex-border/40" />
+
+        {/* Section label */}
+        {!collapsed && (
+          <div className="px-2 pb-1.5">
+            <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
+              Tools
+            </span>
+          </div>
+        )}
+
+        {/* LaunchPad */}
+        <button
+          className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg transition-all text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 ${
+            collapsed ? 'justify-center px-0' : ''
+          }`}
+        >
+          <Rocket size={16} strokeWidth={1.6} className="flex-shrink-0" />
+          {!collapsed && <span className="font-medium">LaunchPad</span>}
+        </button>
       </nav>
 
       {/* Launch Token button */}
       <div className="px-3 pb-3">
         <button
-          className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-medium text-xdex-accent hover:text-white transition-colors border border-xdex-border rounded-lg hover:border-xdex-accent/40 ${
+          className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
-          <DegenLogo size={18} color="#0566ea" />
+          <DegenLogo size={18} color="#ffffff" />
           {!collapsed && <span>Launch Token</span>}
         </button>
-      </div>
-
-      {/* Chain indicators */}
-      <div className="px-4 pb-3 pt-3 border-t border-xdex-border">
-        <div className={`flex ${collapsed ? 'flex-col items-center gap-2' : 'flex-col gap-1.5'}`}>
-          <div className="flex items-center gap-2 text-xs text-xdex-text-secondary">
-            <div className="w-1.5 h-1.5 rounded-full bg-xdex-accent" />
-            {!collapsed && <span>X1</span>}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-xdex-text-secondary">
-            <div className="w-1.5 h-1.5 rounded-full bg-xdex-text-muted" />
-            {!collapsed && <span>Solana</span>}
-          </div>
-        </div>
       </div>
 
       {/* Collapse toggle */}

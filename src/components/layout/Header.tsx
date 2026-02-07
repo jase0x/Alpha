@@ -1,62 +1,145 @@
 'use client';
 
-import { Activity } from 'lucide-react';
-import { formatUsd, formatNumber } from '@/utils/format';
-import { TokenPair, TimeFilter } from '@/types/token';
+import { useState, useEffect, useMemo } from 'react';
+import { Flame, Rocket, TrendingUp, Zap } from 'lucide-react';
+import { formatUsd, formatPrice, formatPercent, formatCompact, getPercentColor } from '@/utils/format';
+import { TokenPair } from '@/types/token';
 
 interface HeaderProps {
   tokens: TokenPair[];
-  trendingTimeframe: TimeFilter;
-  onTimeframeChange: (tf: TimeFilter) => void;
+  allTokens: TokenPair[];
+  trendingTimeframe: string;
+  onTimeframeChange: (tf: any) => void;
 }
 
-export default function Header({ tokens, trendingTimeframe, onTimeframeChange }: HeaderProps) {
+interface BannerItem {
+  icon: React.ReactNode;
+  label: string;
+  tokens: { symbol: string; value: string; color: string }[];
+}
+
+export default function Header({ tokens, allTokens }: HeaderProps) {
+  const [scrollOffset, setScrollOffset] = useState(0);
+
   const totalVolume = tokens.reduce((sum, t) => sum + t.volume24h, 0);
   const totalTxns = tokens.reduce((sum, t) => sum + t.txns24h, 0);
   const totalLiquidity = tokens.reduce((sum, t) => sum + t.liquidity, 0);
 
-  const timeframes: TimeFilter[] = ['5m', '1h', '6h', '24h'];
+  // Compute trending data from all tokens across both chains
+  const bannerItems = useMemo<BannerItem[]>(() => {
+    const all = allTokens.length > 0 ? allTokens : tokens;
+
+    // Top gainers (24h)
+    const gainers = [...all]
+      .filter((t) => t.priceChange24h > 0)
+      .sort((a, b) => b.priceChange24h - a.priceChange24h)
+      .slice(0, 5);
+
+    // Hot (most volume)
+    const hot = [...all]
+      .sort((a, b) => b.volume24h - a.volume24h)
+      .slice(0, 5);
+
+    // Recently launched (newest)
+    const recent = [...all]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 5);
+
+    // Top losers
+    const losers = [...all]
+      .filter((t) => t.priceChange24h < 0)
+      .sort((a, b) => a.priceChange24h - b.priceChange24h)
+      .slice(0, 5);
+
+    return [
+      {
+        icon: <TrendingUp size={12} className="text-xdex-green" />,
+        label: 'Trending',
+        tokens: gainers.map((t) => ({
+          symbol: t.baseToken.symbol,
+          value: formatPercent(t.priceChange24h),
+          color: 'text-xdex-green',
+        })),
+      },
+      {
+        icon: <Flame size={12} className="text-orange-400" />,
+        label: 'Hot',
+        tokens: hot.map((t) => ({
+          symbol: t.baseToken.symbol,
+          value: formatUsd(t.volume24h),
+          color: 'text-orange-400',
+        })),
+      },
+      {
+        icon: <Rocket size={12} className="text-xdex-accent" />,
+        label: 'New',
+        tokens: recent.map((t) => ({
+          symbol: t.baseToken.symbol,
+          value: formatPrice(t.priceUsd),
+          color: 'text-xdex-accent',
+        })),
+      },
+      {
+        icon: <Zap size={12} className="text-yellow-400" />,
+        label: 'Volume',
+        tokens: [
+          { symbol: '24H Vol', value: formatUsd(totalVolume), color: 'text-white' },
+          { symbol: 'Pairs', value: formatCompact(tokens.length), color: 'text-white' },
+          { symbol: 'Txns', value: formatCompact(totalTxns), color: 'text-white' },
+          { symbol: 'TVL', value: formatUsd(totalLiquidity), color: 'text-xdex-accent' },
+        ],
+      },
+      {
+        icon: <TrendingUp size={12} className="text-xdex-red rotate-180" />,
+        label: 'Losers',
+        tokens: losers.map((t) => ({
+          symbol: t.baseToken.symbol,
+          value: formatPercent(t.priceChange24h),
+          color: 'text-xdex-red',
+        })),
+      },
+    ];
+  }, [tokens, allTokens, totalVolume, totalTxns, totalLiquidity]);
+
+  // Auto-scroll the banner
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setScrollOffset((prev) => prev + 1);
+    }, 30);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <header className="flex items-center justify-between px-6 h-12 bg-xdex-surface border-b border-xdex-border">
-      {/* Stats bar */}
-      <div className="flex items-center gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <Activity size={14} className="text-xdex-accent" />
-          <span className="text-xdex-text-muted">24H Volume:</span>
-          <span className="font-semibold text-white">{formatUsd(totalVolume)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xdex-text-muted">Pairs:</span>
-          <span className="font-semibold text-white">{formatNumber(tokens.length)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xdex-text-muted">24H Txns:</span>
-          <span className="font-semibold text-white">{formatNumber(totalTxns)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xdex-text-muted">TVL:</span>
-          <span className="font-semibold text-white">{formatUsd(totalLiquidity)}</span>
-        </div>
-      </div>
-
-      {/* Trending timeframe filter */}
-      <div className="flex items-center gap-1">
-        <span className="text-xdex-text-muted text-xs mr-2">Trending</span>
-        {timeframes.map((tf) => (
-          <button
-            key={tf}
-            onClick={() => onTimeframeChange(tf)}
-            className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-              trendingTimeframe === tf
-                ? 'bg-xdex-accent/20 text-xdex-accent'
-                : 'text-xdex-text-muted hover:text-xdex-text hover:bg-xdex-hover'
-            }`}
-          >
-            {tf}
-          </button>
+    <header className="relative h-10 bg-black border-b border-xdex-border overflow-hidden">
+      <div
+        className="trending-banner flex items-center gap-8 h-full whitespace-nowrap"
+        style={{
+          transform: `translateX(-${scrollOffset % 3000}px)`,
+        }}
+      >
+        {/* Render banner items twice for seamless loop */}
+        {[...bannerItems, ...bannerItems, ...bannerItems].map((item, idx) => (
+          <div key={idx} className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-1.5">
+              {item.icon}
+              <span className="text-[11px] font-semibold text-xdex-text-muted uppercase tracking-wider">
+                {item.label}
+              </span>
+            </div>
+            {item.tokens.map((t, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <span className="text-[11px] font-medium text-white">{t.symbol}</span>
+                <span className={`text-[11px] font-mono font-medium ${t.color}`}>{t.value}</span>
+              </div>
+            ))}
+            <div className="w-px h-3 bg-xdex-border/60" />
+          </div>
         ))}
       </div>
+
+      {/* Fade edges */}
+      <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black to-transparent pointer-events-none z-10" />
     </header>
   );
 }

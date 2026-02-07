@@ -9,6 +9,8 @@ import TokenTable from '@/components/token/TokenTable';
 import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
 import SearchModal from '@/components/ui/SearchModal';
+import X1Logo from '@/components/ui/X1Logo';
+import SolanaLogo from '@/components/ui/SolanaLogo';
 
 export default function DegenPage() {
   // Separate data stores for each chain
@@ -161,6 +163,7 @@ export default function DegenPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <Header
           tokens={tokens}
+          allTokens={allTokens}
           trendingTimeframe={trendingTimeframe}
           onTimeframeChange={setTrendingTimeframe}
         />
@@ -181,7 +184,7 @@ export default function DegenPage() {
           </div>
 
           {/* Chain toggle */}
-          <div className="flex items-center gap-1 bg-xdex-card/50 rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-xdex-card/50 rounded-lg p-0.5 border border-xdex-border/50">
             <button
               onClick={() => setActiveChain('x1')}
               className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
@@ -190,7 +193,7 @@ export default function DegenPage() {
                   : 'text-xdex-text-muted hover:text-xdex-text'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeChain === 'x1' ? 'bg-xdex-accent' : 'bg-xdex-text-muted'}`} />
+              <X1Logo size={16} />
               X1
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
@@ -206,7 +209,7 @@ export default function DegenPage() {
                   : 'text-xdex-text-muted hover:text-xdex-text'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeChain === 'solana' ? 'bg-xdex-accent' : 'bg-xdex-text-muted'}`} />
+              <SolanaLogo size={16} />
               Solana
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                 activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'

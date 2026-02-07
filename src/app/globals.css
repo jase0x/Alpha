@@ -117,3 +117,27 @@ input:focus {
 .star-btn.favorited {
   color: #f59e0b;
 }
+
+/* Trending banner smooth scroll */
+.trending-banner {
+  transition: none;
+  will-change: transform;
+}
+
+/* Buy/sell bar gradient */
+.buy-sell-bar {
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+}
+
+.buy-sell-bar .buy-portion {
+  background: #22c55e;
+  transition: width 0.3s ease;
+}
+
+.buy-sell-bar .sell-portion {
+  background: #ff1744;
+  transition: width 0.3s ease;
+}
