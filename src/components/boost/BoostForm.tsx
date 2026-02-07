@@ -7,9 +7,9 @@ import {
   Upload,
   ChevronRight,
   Check,
-  Diamond,
-  Crown,
-  Medal,
+  Flame,
+  TrendingUp,
+  Sparkles,
   AlertTriangle,
   ExternalLink,
   ImageIcon,
@@ -33,9 +33,9 @@ interface BoostFormProps {
 }
 
 const tierIcons: Record<BoostTier, React.ComponentType<any>> = {
-  silver: Medal,
-  gold: Crown,
-  diamond: Diamond,
+  ignite: Flame,
+  surge: TrendingUp,
+  supernova: Sparkles,
 };
 
 export default function BoostForm({
@@ -51,7 +51,7 @@ export default function BoostForm({
   const [selectedToken, setSelectedToken] = useState<TokenPair | null>(
     preselectedToken ?? null,
   );
-  const [selectedTier, setSelectedTier] = useState<BoostTier>('gold');
+  const [selectedTier, setSelectedTier] = useState<BoostTier>('surge');
   const [tokenSearch, setTokenSearch] = useState('');
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);

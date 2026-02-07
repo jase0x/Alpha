@@ -4,14 +4,14 @@ import { Chain } from './token';
 // Boost Tiers
 // ============================================================
 
-export type BoostTier = 'silver' | 'gold' | 'diamond';
+export type BoostTier = 'ignite' | 'surge' | 'supernova';
 
 export interface BoostTierConfig {
   id: BoostTier;
   name: string;
   description: string;
   durationDays: number;
-  priceXNT: number;    // price for X1 chain
+  priceXNT: number;    // price for X1 chain (temporary discount)
   priceSOL: number;    // price for Solana chain
   features: string[];
   color: string;
@@ -23,63 +23,63 @@ export interface BoostTierConfig {
 }
 
 export const BOOST_TIERS: Record<BoostTier, BoostTierConfig> = {
-  silver: {
-    id: 'silver',
-    name: 'Silver Boost',
-    description: 'Basic visibility boost',
+  ignite: {
+    id: 'ignite',
+    name: 'Ignite',
+    description: 'Spark visibility for your token',
     durationDays: 3,
-    priceXNT: 500,
+    priceXNT: 25,
     priceSOL: 2,
     features: [
       'Boost icon next to token',
       'Rank +10 positions',
       '3-day duration',
     ],
-    color: '#9ca3af',
-    iconColor: 'text-gray-400',
+    color: '#f97316',
+    iconColor: 'text-orange-500',
     rankBoost: 10,
     hasBanner: false,
     hasGlow: false,
     hasTrending: false,
   },
-  gold: {
-    id: 'gold',
-    name: 'Gold Boost',
-    description: 'Premium visibility & trending',
+  surge: {
+    id: 'surge',
+    name: 'Surge',
+    description: 'Amplify momentum & trending visibility',
     durationDays: 7,
-    priceXNT: 2000,
+    priceXNT: 100,
     priceSOL: 8,
     features: [
-      'Gold boost icon next to token',
+      'Surge icon next to token',
       'Rank +25 positions',
       'Appears in trending bar',
       'Highlighted row glow',
       '7-day duration',
     ],
-    color: '#f59e0b',
-    iconColor: 'text-yellow-400',
+    color: '#a855f7',
+    iconColor: 'text-purple-500',
     rankBoost: 25,
     hasBanner: false,
     hasGlow: true,
     hasTrending: true,
   },
-  diamond: {
-    id: 'diamond',
-    name: 'Diamond Boost',
+  supernova: {
+    id: 'supernova',
+    name: 'Supernova',
     description: 'Maximum visibility & custom banner',
     durationDays: 14,
-    priceXNT: 5000,
+    priceXNT: 250,
     priceSOL: 20,
     features: [
-      'Diamond boost icon next to token',
-      'Rank +50 positions (top of list)',
+      'Supernova icon next to token',
+      'Rank +50 positions (top priority)',
       'Appears in trending bar (priority)',
       'Custom banner image in token detail',
       'Highlighted row glow',
       '14-day duration',
     ],
-    color: '#60a5fa',
-    iconColor: 'text-blue-400',
+    color: '#06b6d4',
+    iconColor: 'text-cyan-400',
     rankBoost: 50,
     hasBanner: true,
     hasGlow: true,

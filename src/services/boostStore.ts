@@ -130,7 +130,7 @@ export function getBoostForToken(tokenAddress: string): ActiveBoost | null {
   );
   if (boosts.length === 0) return null;
   // Return highest tier boost
-  const tierOrder: BoostTier[] = ['diamond', 'gold', 'silver'];
+  const tierOrder: BoostTier[] = ['supernova', 'surge', 'ignite'];
   for (const tier of tierOrder) {
     const match = boosts.find((b) => b.tier === tier);
     if (match) return match;
@@ -158,5 +158,5 @@ export function getBoostMap(): Map<string, ActiveBoost> {
 }
 
 function tierRank(tier: BoostTier): number {
-  return tier === 'diamond' ? 3 : tier === 'gold' ? 2 : 1;
+  return tier === 'supernova' ? 3 : tier === 'surge' ? 2 : 1;
 }

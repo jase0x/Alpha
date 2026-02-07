@@ -9,9 +9,9 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
-  Diamond,
-  Crown,
-  Medal,
+  Flame,
+  TrendingUp,
+  Sparkles,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -28,9 +28,9 @@ interface BoostProfileProps {
 }
 
 const tierIcons: Record<BoostTier, React.ComponentType<any>> = {
-  silver: Medal,
-  gold: Crown,
-  diamond: Diamond,
+  ignite: Flame,
+  surge: TrendingUp,
+  supernova: Sparkles,
 };
 
 const statusConfig: Record<
