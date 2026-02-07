@@ -34,8 +34,8 @@ export default function PriceChart({ data }: PriceChartProps) {
           fontSize: 11,
         },
         grid: {
-          vertLines: { color: 'rgba(34, 34, 34, 0.8)' },
-          horzLines: { color: 'rgba(34, 34, 34, 0.8)' },
+          vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+          horzLines: { color: 'rgba(255, 255, 255, 0.03)' },
         },
         crosshair: {
           mode: CrosshairMode.Normal,
