@@ -29,31 +29,31 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       const chart = createChart(containerRef.current, {
         layout: {
-          background: { type: ColorType.Solid, color: 'transparent' },
-          textColor: '#8899aa',
+          background: { type: ColorType.Solid, color: '#111111' },
+          textColor: '#555555',
           fontSize: 11,
         },
         grid: {
-          vertLines: { color: 'rgba(30, 42, 58, 0.5)' },
-          horzLines: { color: 'rgba(30, 42, 58, 0.5)' },
+          vertLines: { color: 'rgba(26, 26, 26, 0.8)' },
+          horzLines: { color: 'rgba(26, 26, 26, 0.8)' },
         },
         crosshair: {
           mode: CrosshairMode.Normal,
           vertLine: {
-            color: 'rgba(0, 212, 170, 0.3)',
-            labelBackgroundColor: '#0d1117',
+            color: 'rgba(11, 119, 234, 0.3)',
+            labelBackgroundColor: '#0a0a0a',
           },
           horzLine: {
-            color: 'rgba(0, 212, 170, 0.3)',
-            labelBackgroundColor: '#0d1117',
+            color: 'rgba(11, 119, 234, 0.3)',
+            labelBackgroundColor: '#0a0a0a',
           },
         },
         rightPriceScale: {
-          borderColor: '#1e2a3a',
+          borderColor: '#1a1a1a',
           scaleMargins: { top: 0.1, bottom: 0.2 },
         },
         timeScale: {
-          borderColor: '#1e2a3a',
+          borderColor: '#1a1a1a',
           timeVisible: true,
           secondsVisible: false,
         },
@@ -62,12 +62,12 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       // Candlestick series
       const candleSeries = chart.addCandlestickSeries({
-        upColor: '#10b981',
-        downColor: '#ef4444',
-        borderUpColor: '#10b981',
-        borderDownColor: '#ef4444',
-        wickUpColor: '#10b981',
-        wickDownColor: '#ef4444',
+        upColor: '#00c853',
+        downColor: '#ff1744',
+        borderUpColor: '#00c853',
+        borderDownColor: '#ff1744',
+        wickUpColor: '#00c853',
+        wickDownColor: '#ff1744',
       });
 
       const formattedData = data.map((d) => ({
@@ -82,7 +82,7 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       // Volume series
       const volumeSeries = chart.addHistogramSeries({
-        color: 'rgba(0, 212, 170, 0.2)',
+        color: 'rgba(11, 119, 234, 0.15)',
         priceFormat: { type: 'volume' },
         priceScaleId: '',
       });
@@ -94,7 +94,7 @@ export default function PriceChart({ data }: PriceChartProps) {
       const volumeData = data.map((d) => ({
         time: d.time as any,
         value: d.volume,
-        color: d.close >= d.open ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+        color: d.close >= d.open ? 'rgba(0, 200, 83, 0.25)' : 'rgba(255, 23, 68, 0.25)',
       }));
 
       volumeSeries.setData(volumeData);
