@@ -10,6 +10,7 @@ interface HeaderProps {
   allTokens: TokenPair[];
   trendingTimeframe: string;
   onTimeframeChange: (tf: any) => void;
+  onTokenClick?: (token: TokenPair) => void;
 }
 
 interface BannerToken {
@@ -17,6 +18,7 @@ interface BannerToken {
   value: string;
   color: string;
   imageUrl?: string;
+  tokenRef?: TokenPair;
 }
 
 interface BannerItem {
@@ -25,7 +27,7 @@ interface BannerItem {
   tokens: BannerToken[];
 }
 
-export default function Header({ tokens, allTokens }: HeaderProps) {
+export default function Header({ tokens, allTokens, onTokenClick }: HeaderProps) {
   const [scrollOffset, setScrollOffset] = useState(0);
 
   const totalVolume = tokens.reduce((sum, t) => sum + t.volume24h, 0);
@@ -62,6 +64,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           value: formatPercent(t.priceChange24h),
           color: 'text-xdex-green',
           imageUrl: t.baseToken.imageUrl,
+          tokenRef: t,
         })),
       },
       {
@@ -72,6 +75,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           value: formatUsd(t.volume24h),
           color: 'text-orange-400',
           imageUrl: t.baseToken.imageUrl,
+          tokenRef: t,
         })),
       },
       {
@@ -82,6 +86,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           value: formatPrice(t.priceUsd),
           color: 'text-xdex-accent',
           imageUrl: t.baseToken.imageUrl,
+          tokenRef: t,
         })),
       },
       {
@@ -102,6 +107,7 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
           value: formatPercent(t.priceChange24h),
           color: 'text-xdex-red',
           imageUrl: t.baseToken.imageUrl,
+          tokenRef: t,
         })),
       },
     ];
@@ -113,6 +119,12 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
     }, 30);
     return () => clearInterval(interval);
   }, []);
+
+  const handleTokenClick = (t: BannerToken) => {
+    if (t.tokenRef && onTokenClick) {
+      onTokenClick(t.tokenRef);
+    }
+  };
 
   return (
     <header className="relative h-10 bg-black border-b border-xdex-border overflow-hidden">
@@ -131,7 +143,11 @@ export default function Header({ tokens, allTokens }: HeaderProps) {
               </span>
             </div>
             {item.tokens.map((t, i) => (
-              <div key={i} className="flex items-center gap-1.5">
+              <div
+                key={i}
+                className={`flex items-center gap-1.5 ${t.tokenRef ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                onClick={() => handleTokenClick(t)}
+              >
                 {t.imageUrl && (
                   <img
                     src={t.imageUrl}

@@ -8,6 +8,7 @@ import TokenRow from './TokenRow';
 interface TokenTableProps {
   tokens: TokenPair[];
   onTokenClick: (token: TokenPair) => void;
+  onSwap: (token: TokenPair) => void;
   onFavorite: (address: string) => void;
   favorites: Set<string>;
 }
@@ -34,6 +35,7 @@ const columns: ColumnDef[] = [
   { key: 'priceChange24h', label: '24H', align: 'right', width: 'w-[70px]', sortable: true },
   { key: 'liquidity', label: 'LIQUIDITY', align: 'right', width: 'w-[90px]', sortable: true },
   { key: 'marketCap', label: 'MCAP', align: 'right', width: 'w-[100px]', sortable: true },
+  { key: 'rank', label: '', align: 'center', width: 'w-10', sortable: false },
 ];
 
 function getSortValue(token: TokenPair, field: SortField): number {
@@ -56,6 +58,7 @@ function getSortValue(token: TokenPair, field: SortField): number {
 export default function TokenTable({
   tokens,
   onTokenClick,
+  onSwap,
   onFavorite,
   favorites,
 }: TokenTableProps) {
@@ -128,6 +131,7 @@ export default function TokenTable({
               isFavorited={favorites.has(token.address)}
               onFavorite={onFavorite}
               onClick={onTokenClick}
+              onSwap={onSwap}
             />
           ))}
         </tbody>

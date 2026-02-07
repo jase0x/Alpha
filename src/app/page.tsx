@@ -181,6 +181,10 @@ export default function DegenPage() {
           allTokens={allTokens}
           trendingTimeframe={trendingTimeframe}
           onTimeframeChange={setTrendingTimeframe}
+          onTokenClick={(token) => {
+            setActiveChain(token.chain);
+            setSelectedToken(token);
+          }}
         />
 
         {/* View title bar with chain toggle */}
@@ -262,6 +266,7 @@ export default function DegenPage() {
           <TokenTable
             tokens={filteredTokens}
             onTokenClick={setSelectedToken}
+            onSwap={setSwapToken}
             onFavorite={toggleFavorite}
             favorites={favorites}
           />

@@ -1,6 +1,6 @@
 'use client';
 
-import { Star } from 'lucide-react';
+import { Star, ArrowLeftRight } from 'lucide-react';
 import { TokenPair } from '@/types/token';
 import {
   formatPrice,
@@ -19,6 +19,7 @@ interface TokenRowProps {
   isFavorited: boolean;
   onFavorite: (address: string) => void;
   onClick: (token: TokenPair) => void;
+  onSwap: (token: TokenPair) => void;
 }
 
 export default function TokenRow({
@@ -27,10 +28,16 @@ export default function TokenRow({
   isFavorited,
   onFavorite,
   onClick,
+  onSwap,
 }: TokenRowProps) {
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     onFavorite(token.address);
+  };
+
+  const handleSwap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSwap(token);
   };
 
   return (
@@ -168,6 +175,17 @@ export default function TokenRow({
         <span className="text-sm text-white font-mono font-medium">
           {formatUsd(token.marketCap)}
         </span>
+      </td>
+
+      {/* Swap button */}
+      <td className="px-2 py-3 text-center">
+        <button
+          onClick={handleSwap}
+          className="p-1.5 rounded-md text-xdex-text-muted hover:text-xdex-green hover:bg-xdex-green/10 transition-colors"
+          title={`Swap ${token.baseToken.symbol}`}
+        >
+          <ArrowLeftRight size={14} />
+        </button>
       </td>
     </tr>
   );
