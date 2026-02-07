@@ -8,10 +8,9 @@
   --xdex-bg: #000000;
   --xdex-surface: #0a0a0a;
   --xdex-card: #111111;
-  --xdex-border: #1a1a1a;
-  --xdex-accent: #0b77ea;
-  --xdex-teal: #00d4aa;
-  --xdex-green: #00c853;
+  --xdex-border: #03274e;
+  --xdex-accent: #0566ea;
+  --xdex-green: #22c55e;
   --xdex-red: #ff1744;
 }
 
@@ -38,12 +37,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a1a1a;
+  background: #03274e;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a2a;
+  background: #0566ea44;
 }
 
 /* Token table row hover */
@@ -52,19 +51,17 @@ html, body {
 }
 
 .token-row:hover {
-  background-color: rgba(11, 119, 234, 0.06);
+  background-color: rgba(5, 102, 234, 0.05);
 }
 
 /* Sidebar active state */
 .sidebar-item.active {
-  background: rgba(11, 119, 234, 0.1);
-  color: #0b77ea;
-  border-left: 2px solid #0b77ea;
+  color: #0566ea;
 }
 
 /* Mini sparkline */
 .sparkline-up {
-  color: #00c853;
+  color: #22c55e;
 }
 
 .sparkline-down {
@@ -98,14 +95,14 @@ html, body {
 
 /* Table header sort indicator */
 .sort-active {
-  color: #0b77ea;
+  color: #0566ea;
 }
 
 /* Search input focus glow */
 input:focus {
   outline: none;
-  border-color: #0b77ea;
-  box-shadow: 0 0 0 1px rgba(11, 119, 234, 0.3);
+  border-color: #0566ea;
+  box-shadow: 0 0 0 1px rgba(5, 102, 234, 0.3);
 }
 
 /* Star/favorite animation */

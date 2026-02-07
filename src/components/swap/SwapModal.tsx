@@ -191,7 +191,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
           <button
             onClick={handleSwap}
             disabled={!fromAmount || Number(fromAmount) <= 0}
-            className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-xdex-accent to-cyan-500 text-white hover:opacity-90 active:scale-[0.98]"
+            className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-xdex-accent text-white hover:opacity-90 active:scale-[0.98]"
           >
             Swap via XDEX
           </button>

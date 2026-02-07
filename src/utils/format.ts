@@ -79,8 +79,8 @@ export function getChainLabel(chain: string): string {
 
 export function getChainColor(chain: string): string {
   switch (chain) {
-    case 'x1': return 'bg-cyan-500/20 text-cyan-400';
-    case 'solana': return 'bg-purple-500/20 text-purple-400';
-    default: return 'bg-gray-500/20 text-gray-400';
+    case 'x1': return 'bg-xdex-accent/15 text-xdex-accent';
+    case 'solana': return 'bg-xdex-text-muted/20 text-xdex-text-secondary';
+    default: return 'bg-xdex-text-muted/20 text-xdex-text-muted';
   }
 }

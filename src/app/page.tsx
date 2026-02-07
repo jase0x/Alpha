@@ -181,19 +181,19 @@ export default function AlphaPage() {
           </div>
 
           {/* Chain toggle */}
-          <div className="flex items-center gap-1 bg-xdex-card rounded-lg border border-xdex-border p-0.5">
+          <div className="flex items-center gap-1 bg-xdex-card/50 rounded-lg p-0.5">
             <button
               onClick={() => setActiveChain('x1')}
               className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
                 activeChain === 'x1'
-                  ? 'bg-cyan-500/20 text-cyan-400 shadow-sm shadow-cyan-500/10'
+                  ? 'bg-xdex-accent/15 text-xdex-accent'
                   : 'text-xdex-text-muted hover:text-xdex-text'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeChain === 'x1' ? 'bg-cyan-400' : 'bg-xdex-text-muted'}`} />
+              <div className={`w-2 h-2 rounded-full ${activeChain === 'x1' ? 'bg-xdex-accent' : 'bg-xdex-text-muted'}`} />
               X1
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeChain === 'x1' ? 'bg-cyan-500/20' : 'bg-xdex-border'
+                activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
               }`}>
                 {x1Tokens.length}
               </span>
@@ -202,14 +202,14 @@ export default function AlphaPage() {
               onClick={() => setActiveChain('solana')}
               className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
                 activeChain === 'solana'
-                  ? 'bg-purple-500/20 text-purple-400 shadow-sm shadow-purple-500/10'
+                  ? 'bg-xdex-accent/15 text-xdex-accent'
                   : 'text-xdex-text-muted hover:text-xdex-text'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeChain === 'solana' ? 'bg-purple-400' : 'bg-xdex-text-muted'}`} />
+              <div className={`w-2 h-2 rounded-full ${activeChain === 'solana' ? 'bg-xdex-accent' : 'bg-xdex-text-muted'}`} />
               Solana
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeChain === 'solana' ? 'bg-purple-500/20' : 'bg-xdex-border'
+                activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
               }`}>
                 {solanaTokens.length}
               </span>
