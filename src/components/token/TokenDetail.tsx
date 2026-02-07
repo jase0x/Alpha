@@ -38,7 +38,10 @@ import {
   getChainLabel,
   getChainColor,
 } from '@/utils/format';
+import { analyzeRugRisk } from '@/utils/rugDetector';
 import PriceChart from '@/components/chart/PriceChart';
+import WhaleTracker from '@/components/token/WhaleTracker';
+import PnLSimulator from '@/components/token/PnLSimulator';
 import AlphaLogo from '@/components/ui/AlphaLogo';
 
 interface TokenDetailProps {
@@ -286,6 +289,7 @@ export default function TokenDetail({
   const nativePrice = t.price || 0;
 
   const safety = useMemo(() => computeSafetyScore(t), [t]);
+  const rugAnalysis = useMemo(() => analyzeRugRisk(t), [t]);
 
   const sentimentTotal = sentiment.bullish + sentiment.bearish;
   const bullishPct = sentimentTotal > 0 ? (sentiment.bullish / sentimentTotal) * 100 : 50;
@@ -732,6 +736,48 @@ export default function TokenDetail({
             )}
           </div>
 
+          {/* Rug Pull / Honeypot Analysis */}
+          {rugAnalysis.flags.length > 0 && (
+            <div className="px-5 py-3 border-b border-xdex-border">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <AlertTriangle size={12} className={rugAnalysis.color} />
+                  <span className="text-[10px] text-xdex-text-muted font-semibold uppercase">Rug Detection</span>
+                </div>
+                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded capitalize ${rugAnalysis.color} ${rugAnalysis.bgColor}`}>
+                  {rugAnalysis.riskLevel}
+                  <span className="text-[9px] font-medium ml-0.5">({rugAnalysis.riskScore})</span>
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {rugAnalysis.flags.map((flag) => (
+                  <div
+                    key={flag.id}
+                    className={`flex items-start gap-2 p-1.5 rounded ${
+                      flag.severity === 'danger' ? 'bg-xdex-red/5 border border-xdex-red/15' :
+                      flag.severity === 'warning' ? 'bg-yellow-400/5 border border-yellow-400/15' :
+                      'bg-xdex-border/10 border border-xdex-border/20'
+                    }`}
+                  >
+                    <AlertTriangle size={9} className={`mt-0.5 flex-shrink-0 ${
+                      flag.severity === 'danger' ? 'text-xdex-red' :
+                      flag.severity === 'warning' ? 'text-yellow-400' :
+                      'text-xdex-text-muted'
+                    }`} />
+                    <div>
+                      <span className={`text-[10px] font-semibold block ${
+                        flag.severity === 'danger' ? 'text-xdex-red' :
+                        flag.severity === 'warning' ? 'text-yellow-400' :
+                        'text-xdex-text-secondary'
+                      }`}>{flag.label}</span>
+                      <span className="text-[9px] text-xdex-text-muted">{flag.description}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Community Sentiment */}
           <div className="px-5 py-3 border-b border-xdex-border">
             <div className="text-[10px] text-xdex-text-muted font-semibold uppercase tracking-wider mb-2">
@@ -860,6 +906,12 @@ export default function TokenDetail({
               <span className="text-[10px] text-xdex-text-muted">No alerts set</span>
             )}
           </div>
+
+          {/* Whale Tracker */}
+          <WhaleTracker token={t} />
+
+          {/* PnL Simulator */}
+          <PnLSimulator token={t} />
 
           {/* Risk/Safety signals */}
           {(isLowLiquidity || isShallowLiquidity || isHighVolatility || isVeryNew || hasUnusualDecimals || hasSmallPrice) && (

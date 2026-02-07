@@ -12,14 +12,20 @@ import {
   Settings2,
   Download,
   Menu,
+  SlidersHorizontal,
+  Crosshair,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { TokenPair, FilterView, TimeFilter, Chain } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { ColumnId, getVisibleColumns, saveVisibleColumns, exportTokensCSV, downloadCSV } from '@/utils/columnPrefs';
 import { checkAlerts } from '@/services/alertStore';
 import { seedSentiment } from '@/services/sentimentStore';
+import { checkSniperRules } from '@/services/sniperStore';
 import { fetchPoolList } from '@/services/api';
 import { getBoostMap } from '@/services/boostStore';
+import { computeSafetyScore } from '@/utils/safetyScore';
+import { isLikelyRug } from '@/utils/rugDetector';
 import { useToast } from '@/components/ui/Toast';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
@@ -28,6 +34,9 @@ import TokenDetail from '@/components/token/TokenDetail';
 import SwapModal from '@/components/swap/SwapModal';
 import BoostForm from '@/components/boost/BoostForm';
 import BoostProfile from '@/components/boost/BoostProfile';
+import ScreenerFilters, { ScreenerFilterValues, DEFAULT_FILTERS, isFiltersActive } from '@/components/screener/ScreenerFilters';
+import TokenCompare from '@/components/compare/TokenCompare';
+import SniperPanel from '@/components/sniper/SniperPanel';
 import KeyboardShortcuts from '@/components/ui/KeyboardShortcuts';
 import ColumnSettings from '@/components/ui/ColumnSettings';
 import WalletStub from '@/components/ui/WalletStub';
@@ -129,6 +138,17 @@ function AlphaPageContent() {
   // Mobile sidebar
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // Screener filters
+  const [screenerFilters, setScreenerFilters] = useState<ScreenerFilterValues>(DEFAULT_FILTERS);
+  const [showScreenerFilters, setShowScreenerFilters] = useState(false);
+
+  // Compare modal
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareInitialToken, setCompareInitialToken] = useState<TokenPair | null>(null);
+
+  // Sniper panel
+  const [showSniper, setShowSniper] = useState(false);
+
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
 
@@ -180,6 +200,14 @@ function AlphaPageContent() {
       if (triggered.length > 0) {
         for (const a of triggered) {
           toast('info', `Alert: ${a.tokenSymbol} is now ${a.condition} $${a.targetPrice.toFixed(6)}`);
+        }
+      }
+
+      // Check sniper rules against new pairs
+      const sniperMatches = checkSniperRules(allPools);
+      if (sniperMatches.length > 0) {
+        for (const m of sniperMatches) {
+          toast('success', `Sniper: New pair ${m.token.baseToken.symbol} matched "${m.rule.name}"`);
         }
       }
     } catch {
@@ -258,7 +286,7 @@ function AlphaPageContent() {
     });
   }, []);
 
-  // Filter tokens based on active view and search query
+  // Filter tokens based on active view, search query, and screener filters
   const filteredTokens = useMemo(() => {
     let result = tokens;
 
@@ -272,6 +300,39 @@ function AlphaPageContent() {
           t.quoteToken.symbol.toLowerCase().includes(q) ||
           t.address.toLowerCase().includes(q),
       );
+    }
+
+    // Apply screener filters
+    if (isFiltersActive(screenerFilters)) {
+      const f = screenerFilters;
+      result = result.filter((t) => {
+        if (f.minLiquidity !== null && t.liquidity < f.minLiquidity) return false;
+        if (f.maxLiquidity !== null && t.liquidity > f.maxLiquidity) return false;
+        if (f.minMcap !== null && t.marketCap < f.minMcap) return false;
+        if (f.maxMcap !== null && t.marketCap > f.maxMcap) return false;
+        if (f.minVolume !== null && t.volume24h < f.minVolume) return false;
+        if (f.maxVolume !== null && t.volume24h > f.maxVolume) return false;
+        if (f.minAge !== null) {
+          const ageH = (Date.now() - t.createdAt) / 3600000;
+          if (ageH < f.minAge) return false;
+        }
+        if (f.maxAge !== null) {
+          const ageH = (Date.now() - t.createdAt) / 3600000;
+          if (ageH > f.maxAge) return false;
+        }
+        if (f.minSafety !== null || f.maxSafety !== null) {
+          const score = computeSafetyScore(t).score;
+          if (f.minSafety !== null && score < f.minSafety) return false;
+          if (f.maxSafety !== null && score > f.maxSafety) return false;
+        }
+        if (f.minChange24h !== null && t.priceChange24h < f.minChange24h) return false;
+        if (f.maxChange24h !== null && t.priceChange24h > f.maxChange24h) return false;
+        if (f.minMakers !== null && t.makers < f.minMakers) return false;
+        if (f.minTxns !== null && t.txns24h < f.minTxns) return false;
+        if (f.verifiedOnly && !t.isVerified) return false;
+        if (f.hideRugRisk && isLikelyRug(t)) return false;
+        return true;
+      });
     }
 
     switch (activeView) {
@@ -301,7 +362,7 @@ function AlphaPageContent() {
     }
 
     return result;
-  }, [tokens, activeView, favorites, searchQuery]);
+  }, [tokens, activeView, favorites, searchQuery, screenerFilters]);
 
   const pairCounts = useMemo(() => {
     const sevenDaysAgo = Date.now() - 7 * 86400000;
@@ -499,6 +560,37 @@ function AlphaPageContent() {
 
           {/* Right: Tools + Search + Chain toggle */}
           <div className="flex items-center gap-2">
+            {/* Screener filters */}
+            <button
+              onClick={() => setShowScreenerFilters(!showScreenerFilters)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                showScreenerFilters || isFiltersActive(screenerFilters)
+                  ? 'text-xdex-accent bg-xdex-accent/10'
+                  : 'text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10'
+              }`}
+              title="Screener filters"
+            >
+              <SlidersHorizontal size={14} />
+            </button>
+
+            {/* Compare */}
+            <button
+              onClick={() => { setCompareInitialToken(null); setShowCompare(true); }}
+              className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
+              title="Compare tokens"
+            >
+              <ArrowLeftRight size={14} />
+            </button>
+
+            {/* Sniper */}
+            <button
+              onClick={() => setShowSniper(true)}
+              className="p-1.5 rounded-lg text-xdex-text-muted hover:text-xdex-accent hover:bg-xdex-accent/10 transition-colors"
+              title="Pair Sniper"
+            >
+              <Crosshair size={14} />
+            </button>
+
             {/* Export CSV */}
             <button
               onClick={handleExport}
@@ -592,6 +684,16 @@ function AlphaPageContent() {
           </div>
         )}
 
+        {/* Screener filters panel */}
+        {showScreenerFilters && (
+          <ScreenerFilters
+            filters={screenerFilters}
+            onChange={setScreenerFilters}
+            onClose={() => setShowScreenerFilters(false)}
+            matchCount={filteredTokens.length}
+          />
+        )}
+
         {/* Token table */}
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
@@ -677,6 +779,30 @@ function AlphaPageContent() {
       {/* Wallet stub modal */}
       {showWalletStub && (
         <WalletStub onClose={() => setShowWalletStub(false)} />
+      )}
+
+      {/* Token compare modal */}
+      {showCompare && (
+        <TokenCompare
+          tokens={allTokens}
+          onClose={() => setShowCompare(false)}
+          initialToken={compareInitialToken}
+        />
+      )}
+
+      {/* Sniper panel modal */}
+      {showSniper && (
+        <SniperPanel
+          onClose={() => setShowSniper(false)}
+          onTokenClick={(address, chain) => {
+            const allPools = [...x1Tokens, ...solanaTokens];
+            const match = allPools.find((t) => t.address === address);
+            if (match) {
+              setActiveChain(chain);
+              setSelectedToken(match);
+            }
+          }}
+        />
       )}
     </div>
   );
