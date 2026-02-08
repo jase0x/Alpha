@@ -106,6 +106,16 @@ input:focus {
   box-shadow: none;
 }
 
+/* Remove number input scroll spinners */
+.no-spin::-webkit-inner-spin-button,
+.no-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spin {
+  -moz-appearance: textfield;
+}
+
 /* Star/favorite animation */
 .star-btn {
   transition: transform 0.15s ease, color 0.15s ease;

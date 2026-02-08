@@ -61,8 +61,8 @@ interface TokenDetailProps {
   boost?: ActiveBoost | null;
 }
 
-type ChartTimeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
-type BottomTab = 'transactions' | 'topTraders' | 'holders' | 'lp' | 'info';
+type ChartTimeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '7d' | '30d';
+type BottomTab = 'transactions' | 'volume' | 'topTraders' | 'holders' | 'lp' | 'info';
 type TxFilter = 'all' | 'buys' | 'sells' | 'lp';
 
 // Whale category icons
@@ -145,7 +145,8 @@ export default function TokenDetail({
   useEffect(() => {
     let cancelled = false;
     setChartLoading(true);
-    const tf = chartTimeframe === '1m' ? '5m' : chartTimeframe;
+    const tfMap: Record<string, string> = { '1m': '5m', '7d': '1d', '30d': '1d' };
+    const tf = tfMap[chartTimeframe] || chartTimeframe;
     fetchOHLCV(token, tf).then((data) => {
       if (!cancelled) {
         setChartData(data);
@@ -177,7 +178,8 @@ export default function TokenDetail({
 
   const refreshData = useCallback(async () => {
     setChartLoading(true);
-    const tf = chartTimeframe === '1m' ? '5m' : chartTimeframe;
+    const tfMapR: Record<string, string> = { '1m': '5m', '7d': '1d', '30d': '1d' };
+    const tf = tfMapR[chartTimeframe] || chartTimeframe;
     const [chartResult, poolResult, extResult] = await Promise.allSettled([
       fetchOHLCV(token, tf),
       fetchPoolDetail(token.address, token.chain),
@@ -234,6 +236,8 @@ export default function TokenDetail({
     { value: '1h', label: '1H' },
     { value: '4h', label: '4H' },
     { value: '1d', label: '1D' },
+    { value: '7d', label: '7D' },
+    { value: '30d', label: '30D' },
   ];
 
   const chartTypes: { value: ChartType; label: string; icon: typeof CandlestickChart }[] = [
@@ -339,6 +343,7 @@ export default function TokenDetail({
 
   const bottomTabs: { id: BottomTab; label: string; icon: typeof Activity; count?: number }[] = [
     { id: 'transactions', label: 'Txns', icon: Activity, count: t.txns24h },
+    { id: 'volume', label: 'Volume', icon: TrendingUp },
     { id: 'topTraders', label: 'Top Traders', icon: Award },
     { id: 'holders', label: 'Holders', icon: Users },
     { id: 'lp', label: 'LP Holders', icon: Users, count: t.lpHolderCount || t.makers },
@@ -532,8 +537,8 @@ export default function TokenDetail({
                 {/* === TRANSACTIONS TAB === */}
                 {bottomTab === 'transactions' && (
                   <div>
-                    <div className="grid grid-cols-7 px-4 py-2 text-[11px] text-xdex-text-muted font-semibold uppercase border-b border-[#222] sticky top-0 bg-black z-10">
-                      <span>Date</span>
+                    <div className="grid grid-cols-7 gap-2 px-4 py-2.5 text-xs text-xdex-text-muted font-semibold uppercase border-b border-[#222] sticky top-0 bg-black z-10">
+                      <span>Time</span>
                       <span>Type</span>
                       <span className="text-right">Price USD</span>
                       <span className="text-right">Total USD</span>
@@ -549,38 +554,101 @@ export default function TokenDetail({
                       </div>
                     ) : (
                       <>
-                        {filteredTxns.map((tx) => (
-                          <div
-                            key={tx.signature}
-                            className="grid grid-cols-7 px-4 py-2 text-xs border-b border-[#111] hover:bg-white/[0.02] transition-colors"
-                          >
-                            <span className="text-xdex-text-muted">{formatTxAge(tx.timestamp)}</span>
-                            <span className={
-                              tx.type === 'Buy' ? 'text-xdex-green font-semibold' :
-                              tx.type === 'Sell' ? 'text-xdex-red font-semibold' :
-                              'text-xdex-accent font-semibold'
-                            }>
-                              {tx.type}
-                            </span>
-                            <span className="text-right text-white font-mono">{formatPrice(t.priceUsd)}</span>
-                            <span className="text-right text-white font-mono">{formatUsd(tx.totalUsd)}</span>
-                            <span className="text-right text-xdex-text-secondary font-mono">{tx.tokenAmount.toFixed(2)}</span>
-                            <span className="text-right font-mono">
-                              <a href={`${explorerBase}/address/${tx.maker}`} target="_blank" rel="noopener noreferrer" className="text-xdex-accent hover:underline" onClick={(e) => e.stopPropagation()}>
-                                {tx.maker.slice(0, 4)}...{tx.maker.slice(-4)}
-                              </a>
-                            </span>
-                            <span className="text-right">
-                              <a href={`${explorerBase}/tx/${tx.signature}`} target="_blank" rel="noopener noreferrer" className="text-xdex-text-muted hover:text-xdex-accent transition-colors" onClick={(e) => e.stopPropagation()}>
-                                <ExternalLink size={11} />
-                              </a>
-                            </span>
-                          </div>
-                        ))}
+                        {filteredTxns.map((tx) => {
+                          const isBuy = tx.type === 'Buy';
+                          const isSell = tx.type === 'Sell';
+                          const rowColor = isBuy ? 'text-xdex-green' : isSell ? 'text-xdex-red' : 'text-xdex-accent';
+                          const ts = new Date(tx.timestamp);
+                          const timeStr = `${ts.getHours().toString().padStart(2, '0')}:${ts.getMinutes().toString().padStart(2, '0')}:${ts.getSeconds().toString().padStart(2, '0')}`;
+                          return (
+                            <div
+                              key={tx.signature}
+                              className="grid grid-cols-7 gap-2 px-4 py-2.5 text-[13px] border-b border-[#111] hover:bg-white/[0.02] transition-colors"
+                            >
+                              <span className="text-xdex-text-muted font-mono text-xs">
+                                <div>{formatTxAge(tx.timestamp)}</div>
+                                <div className="text-[10px] text-xdex-text-muted/60">{timeStr}</div>
+                              </span>
+                              <span className={`${rowColor} font-semibold`}>
+                                {tx.type}
+                              </span>
+                              <span className="text-right text-white font-mono">{formatPrice(t.priceUsd)}</span>
+                              <span className={`text-right font-mono font-medium ${rowColor}`}>{formatUsd(tx.totalUsd)}</span>
+                              <span className="text-right text-xdex-text-secondary font-mono">{tx.tokenAmount.toFixed(2)}</span>
+                              <span className="text-right font-mono">
+                                <a href={`${explorerBase}/address/${tx.maker}`} target="_blank" rel="noopener noreferrer" className={`${isBuy ? 'text-xdex-green' : isSell ? 'text-xdex-red' : 'text-xdex-accent'} hover:underline`} onClick={(e) => e.stopPropagation()}>
+                                  {tx.maker.slice(0, 4)}...{tx.maker.slice(-4)}
+                                </a>
+                              </span>
+                              <span className="text-right flex justify-end">
+                                <a href={`${explorerBase}/tx/${tx.signature}`} target="_blank" rel="noopener noreferrer" className="text-xdex-text-muted hover:text-xdex-accent transition-colors" onClick={(e) => e.stopPropagation()}>
+                                  <ExternalLink size={13} />
+                                </a>
+                              </span>
+                            </div>
+                          );
+                        })}
                         {filteredTxns.length === 0 && (
                           <div className="flex items-center justify-center py-12 text-sm text-xdex-text-muted">No transactions found</div>
                         )}
                       </>
+                    )}
+                  </div>
+                )}
+
+                {/* === VOLUME TAB === */}
+                {bottomTab === 'volume' && (
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">24h Volume</div>
+                        <div className="text-lg font-bold text-xdex-green font-mono">{formatUsd(extendedData?.volumeUsd24h || t.volume24h)}</div>
+                      </div>
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">Buy Volume</div>
+                        <div className="text-lg font-bold text-xdex-green font-mono">{formatUsd(buyVolume)}</div>
+                      </div>
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">Sell Volume</div>
+                        <div className="text-lg font-bold text-xdex-red font-mono">{formatUsd(sellVolume)}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">Net Volume</div>
+                        <div className={`text-lg font-bold font-mono ${buyVolume - sellVolume >= 0 ? 'text-xdex-green' : 'text-xdex-red'}`}>
+                          {buyVolume - sellVolume >= 0 ? '+' : ''}{formatUsd(buyVolume - sellVolume)}
+                        </div>
+                      </div>
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">24h Txns</div>
+                        <div className="text-lg font-bold text-white font-mono">{formatNumber(t.txns24h)}</div>
+                      </div>
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">24h Fees</div>
+                        <div className="text-lg font-bold text-white font-mono">{formatUsd(t.fee24h || 0)}</div>
+                      </div>
+                    </div>
+                    <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                      <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-3">Buy / Sell Ratio</div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-xdex-green font-bold">{buys} Buys ({buyPercent.toFixed(0)}%)</span>
+                        <span className="text-sm text-xdex-red font-bold">{sells} Sells ({sellPercent.toFixed(0)}%)</span>
+                      </div>
+                      <div className="buy-sell-bar h-3 rounded">
+                        <div className="buy-portion" style={{ width: `${buyPercent}%` }} />
+                        <div className="sell-portion" style={{ width: `${sellPercent}%` }} />
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-xdex-green font-mono">{formatUsd(buyVolume)}</span>
+                        <span className="text-xs text-xdex-red font-mono">{formatUsd(sellVolume)}</span>
+                      </div>
+                    </div>
+                    {t.apr24h && t.apr24h > 0 && (
+                      <div className="bg-[#060606] border border-[#222] rounded-xl p-4">
+                        <div className="text-xs text-xdex-text-muted font-semibold uppercase mb-1">APR (24h)</div>
+                        <div className="text-lg font-bold text-xdex-green font-mono">{t.apr24h.toFixed(1)}%</div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -810,10 +878,10 @@ export default function TokenDetail({
 
         {/* ========= RIGHT SIDEBAR ========= */}
         <div className="w-[360px] flex-shrink-0 overflow-y-auto border-l border-[#222] bg-[#030303]">
-          {/* Boost banner */}
-          {boost?.bannerImageUrl && (
+          {/* Token banner / Info ad area */}
+          {boost?.bannerImageUrl ? (
             <div className="relative">
-              <img src={boost.bannerImageUrl} alt="Promoted" className="w-full h-24 object-cover" />
+              <img src={boost.bannerImageUrl} alt="Promoted" className="w-full h-28 object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-black/40">
@@ -823,16 +891,61 @@ export default function TokenDetail({
                   <span style={{ color: '#DFFF00' }}>{boost.tierConfig.name}</span>
                 </span>
               </div>
+              {boost?.description && (
+                <div className="px-4 py-2 border-b border-[#222] text-xs text-xdex-text-secondary">{boost.description}</div>
+              )}
+            </div>
+          ) : (
+            <div className="px-4 py-3 border-b border-[#222] bg-[#060606]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap size={14} className="text-xdex-text-muted" />
+                  <span className="text-xs text-xdex-text-secondary">Promote this token&apos;s visibility</span>
+                </div>
+                <button className="text-[11px] px-3 py-1.5 rounded-lg border border-[#333] text-xdex-accent hover:bg-[#111] transition-colors font-medium">
+                  Boost Exposure
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Price changes bar */}
+          {/* MC / FDV / Liquidity top row (DexScreener-style) */}
+          <div className="px-4 py-3 border-b border-[#222]">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">MC</div>
+                <div className="text-base font-bold text-xdex-accent font-mono mt-0.5">{formatUsd(t.marketCap)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">FDV</div>
+                <div className="text-base font-bold text-white font-mono mt-0.5">{formatUsd(t.fdv)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">Liquidity</div>
+                <div className={`text-base font-bold font-mono mt-0.5 ${isLowLiquidity ? 'text-xdex-yellow' : 'text-xdex-accent'}`}>
+                  {formatUsd(t.liquidity)}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">Holders</div>
+                <div className="text-base font-bold text-white font-mono mt-0.5">{formatNumber(t.makers)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">Safety Score</div>
+                <div className={`text-base font-bold font-mono mt-0.5 ${safety.color}`}>{safety.score}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Price changes bar (DexScreener-style tabs) */}
           <div className="px-4 py-3 border-b border-[#222]">
             <div className="grid grid-cols-4 gap-2">
               {changes.map((c) => (
-                <div key={c.label} className="text-center p-2 rounded-lg bg-[#111] border border-[#222]">
-                  <div className="text-[10px] text-xdex-text-muted font-semibold">{c.label}</div>
-                  <div className={`text-sm font-mono font-bold mt-0.5 ${getPercentColor(c.value)}`}>
+                <div key={c.label} className="text-center p-2.5 rounded-lg bg-[#111] border border-[#222]">
+                  <div className="text-xs text-xdex-text-muted font-semibold">{c.label}</div>
+                  <div className={`text-base font-mono font-bold mt-0.5 ${getPercentColor(c.value)}`}>
                     {c.value === 0 ? '—' : formatPercent(c.value)}
                   </div>
                 </div>
@@ -840,47 +953,39 @@ export default function TokenDetail({
             </div>
           </div>
 
-          {/* Key metrics grid */}
+          {/* Volume & Traders section (DexScreener-style) */}
           <div className="px-4 py-3 border-b border-[#222]">
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">Market Cap</div>
-                <div className="text-sm font-bold text-white font-mono mt-0.5">{formatUsd(t.marketCap)}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">FDV</div>
-                <div className="text-sm font-bold text-white font-mono mt-0.5">{formatUsd(t.fdv)}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">Liquidity</div>
-                <div className={`text-sm font-bold font-mono mt-0.5 ${isLowLiquidity ? 'text-xdex-yellow' : 'text-xdex-accent'}`}>
-                  {formatUsd(t.liquidity)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">24h Volume</div>
-                <div className="text-sm font-bold text-xdex-green font-mono mt-0.5">
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">24h Vol</div>
+                <div className="text-base font-bold text-xdex-green font-mono mt-0.5">
                   {formatUsd(extendedData?.volumeUsd24h || t.volume24h)}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">24h Txns</div>
-                <div className="text-sm font-bold text-white font-mono mt-0.5">{formatNumber(t.txns24h)}</div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">Net Vol</div>
+                <div className={`text-base font-bold font-mono mt-0.5 ${buyVolume - sellVolume >= 0 ? 'text-xdex-green' : 'text-xdex-red'}`}>
+                  {formatUsd(Math.abs(buyVolume - sellVolume))}
+                </div>
               </div>
               <div>
-                <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">Makers</div>
-                <div className="text-sm font-bold text-white font-mono mt-0.5">{formatNumber(t.makers)}</div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">24h Traders</div>
+                <div className="text-base font-bold text-white font-mono mt-0.5">{formatNumber(t.txns24h)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-xdex-text-muted font-semibold uppercase">Net Buyers</div>
+                <div className="text-base font-bold text-white font-mono mt-0.5">{formatNumber(buys)}</div>
               </div>
               {extendedData?.txns7d ? (
                 <div>
-                  <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">7d Txns</div>
-                  <div className="text-sm font-bold text-white font-mono mt-0.5">{formatNumber(extendedData.txns7d)}</div>
+                  <div className="text-xs text-xdex-text-muted font-semibold uppercase">7d Txns</div>
+                  <div className="text-base font-bold text-white font-mono mt-0.5">{formatNumber(extendedData.txns7d)}</div>
                 </div>
               ) : null}
               {t.apr24h && t.apr24h > 0 ? (
                 <div>
-                  <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">APR</div>
-                  <div className="text-sm font-bold text-xdex-green font-mono mt-0.5">{t.apr24h.toFixed(1)}%</div>
+                  <div className="text-xs text-xdex-text-muted font-semibold uppercase">APR</div>
+                  <div className="text-base font-bold text-xdex-green font-mono mt-0.5">{t.apr24h.toFixed(1)}%</div>
                 </div>
               ) : null}
             </div>
@@ -1032,7 +1137,8 @@ export default function TokenDetail({
                   <div className="flex-1 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#333] bg-black">
                     <span className="text-xs text-xdex-text-muted">$</span>
                     <input type="number" placeholder={formatPrice(t.priceUsd)} value={alertPrice} onChange={(e) => setAlertPrice(e.target.value)}
-                      className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0" style={{ boxShadow: 'none' }} />
+                      onWheel={(e) => (e.target as HTMLElement).blur()}
+                      className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0 no-spin" style={{ boxShadow: 'none' }} />
                   </div>
                   <button onClick={handleCreateAlert} className="px-3 py-1.5 rounded-lg bg-xdex-accent text-white text-[11px] font-semibold hover:brightness-110 transition-all">Set</button>
                 </div>
@@ -1062,7 +1168,8 @@ export default function TokenDetail({
             <div className="text-xs text-white font-semibold mb-2">Price Calculator</div>
             <div className="flex items-center gap-2 p-2.5 rounded-lg border border-[#222] bg-[#111]">
               <input type="number" value={calcAmount} onChange={(e) => setCalcAmount(e.target.value)}
-                className="flex-1 bg-transparent text-white text-sm font-mono outline-none border-none shadow-none min-w-0" style={{ boxShadow: 'none' }} />
+                onWheel={(e) => (e.target as HTMLElement).blur()}
+                className="flex-1 bg-transparent text-white text-sm font-mono outline-none border-none shadow-none min-w-0 no-spin" style={{ boxShadow: 'none' }} />
               <span className="text-xs font-semibold text-xdex-text-secondary px-2 py-1 rounded bg-[#222]">{t.baseToken.symbol}</span>
             </div>
             <div className="flex items-center justify-center py-1"><ArrowUpDown size={12} className="text-xdex-text-muted" /></div>

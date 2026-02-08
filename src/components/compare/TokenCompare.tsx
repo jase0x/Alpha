@@ -226,10 +226,22 @@ export default function TokenCompare({ tokens, onClose, initialToken }: Props) {
             <table className="w-full">
               <thead className="sticky top-0 bg-xdex-surface z-10">
                 <tr className="border-b border-xdex-border">
-                  <th className="px-4 py-2.5 text-left text-[10px] text-xdex-text-muted font-semibold uppercase w-36">Metric</th>
+                  <th className="px-4 py-3 text-left text-[10px] text-xdex-text-muted font-semibold uppercase w-36">Metric</th>
                   {selected.map((t) => (
-                    <th key={t.address} className="px-4 py-2.5 text-center text-xs font-bold text-white">
-                      {t.baseToken.symbol}
+                    <th key={t.address} className="px-4 py-3 text-center">
+                      <div className="flex flex-col items-center gap-1.5">
+                        {t.baseToken.imageUrl ? (
+                          <img src={t.baseToken.imageUrl} alt={t.baseToken.symbol} className="w-8 h-8 rounded-full bg-xdex-card border border-xdex-border object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-xdex-card border border-xdex-border flex items-center justify-center">
+                            <span className="text-xs font-bold text-xdex-accent">{t.baseToken.symbol.charAt(0)}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-xs font-bold text-white">{t.baseToken.symbol}</span>
+                          <span className="text-[10px] text-xdex-text-muted ml-1">/{t.quoteToken.symbol}</span>
+                        </div>
+                      </div>
                     </th>
                   ))}
                 </tr>

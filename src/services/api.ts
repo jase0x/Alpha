@@ -350,7 +350,7 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
     priceChange5m: Number(p.price_change_5m ?? 0),
     priceChange1h: Number(p.price_change_1h ?? 0),
     priceChange6h: Number(p.price_change_6h ?? 0),
-    priceChange24h: Number(p.price_change_24h ?? 0) || (apr24h > 0 ? apr24h / 365 : 0),
+    priceChange24h: p.price_change_24h != null ? Number(p.price_change_24h) : (apr24h > 0 ? apr24h / 365 : 0),
     liquidity: tvl,
     marketCap: estimatedMcap,
     fdv: estimatedMcap,

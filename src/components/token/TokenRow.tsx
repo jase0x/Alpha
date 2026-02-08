@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Star, AlertTriangle, Zap, Shield, RefreshCw } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Star, AlertTriangle, Zap, Shield, RefreshCw, Copy, Check } from 'lucide-react';
 import { TokenPair, TimeFilter } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { ColumnId } from '@/utils/columnPrefs';
@@ -93,9 +93,19 @@ export default function TokenRow({
   isSelected,
   timeFilter = '24h',
 }: TokenRowProps) {
+  const [copied, setCopied] = useState(false);
+
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     onFavorite(token.address);
+  };
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(token.baseToken.address).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   };
 
   const handleSwap = (e: React.MouseEvent) => {
@@ -135,6 +145,10 @@ export default function TokenRow({
               <Star size={16} fill={isFavorited ? 'currentColor' : 'none'} />
             </button>
 
+            <button onClick={handleCopy} className="flex-shrink-0 text-xdex-text-muted hover:text-xdex-accent transition-colors" title="Copy token address">
+              {copied ? <Check size={13} className="text-xdex-green" /> : <Copy size={13} />}
+            </button>
+
             {token.baseToken.imageUrl ? (
               <img src={token.baseToken.imageUrl} alt={token.baseToken.symbol} className="w-8 h-8 rounded-full bg-xdex-card border border-xdex-border flex-shrink-0 object-cover" onError={(e) => { const el = e.target as HTMLImageElement; el.style.display = 'none'; el.nextElementSibling?.classList.remove('hidden'); }} />
             ) : null}
@@ -168,6 +182,13 @@ export default function TokenRow({
         </td>
       )}
 
+      {/* Age column */}
+      {show('age') && (
+        <td className="px-2 py-3 text-right">
+          <span className="text-base text-xdex-text-secondary font-mono">{formatAge(token.createdAt)}</span>
+        </td>
+      )}
+
       {show('volume') && (
         <td className="px-2 py-3 text-right">
           <span className="text-base text-white font-mono font-medium">{formatUsd(token.volume24h)}</span>
@@ -194,7 +215,7 @@ export default function TokenRow({
 
       {show('makers') && (
         <td className="px-2 py-3 text-right">
-          <span className="text-base text-white font-mono">{formatNumber(token.makers)}</span>
+          <span className={`text-base font-mono ${priceChange > 0 ? 'text-xdex-green' : priceChange < 0 ? 'text-xdex-red' : 'text-white'}`}>{formatNumber(token.makers)}</span>
         </td>
       )}
 

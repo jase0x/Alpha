@@ -88,8 +88,11 @@ function AlphaPageContent() {
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
 
-  // Filtered tokens via extracted hook
-  const filteredTokens = useFilteredTokens(tokens, activeView, favorites, searchQuery, screenerFilters);
+  // When searching, search across ALL tokens from both chains
+  const tokensToFilter = searchQuery.trim() ? allTokens : tokens;
+
+  // Filtered tokens via extracted hook (pass timeFilter for gainers/losers)
+  const filteredTokens = useFilteredTokens(tokensToFilter, activeView, favorites, searchQuery, screenerFilters, priceTimeFilter);
 
   // Load favorites from localStorage
   useEffect(() => {

@@ -99,7 +99,8 @@ function RangeInput({
             placeholder={placeholder[0]}
             value={minVal ?? ''}
             onChange={(e) => onMinChange(e.target.value ? Number(e.target.value) : null)}
-            className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0"
+            onWheel={(e) => (e.target as HTMLElement).blur()}
+            className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0 no-spin"
             style={{ boxShadow: 'none' }}
           />
           {suffix && <span className="text-[10px] text-xdex-text-muted">{suffix}</span>}
@@ -112,7 +113,8 @@ function RangeInput({
             placeholder={placeholder[1]}
             value={maxVal ?? ''}
             onChange={(e) => onMaxChange(e.target.value ? Number(e.target.value) : null)}
-            className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0"
+            onWheel={(e) => (e.target as HTMLElement).blur()}
+            className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0 no-spin"
             style={{ boxShadow: 'none' }}
           />
           {suffix && <span className="text-[10px] text-xdex-text-muted">{suffix}</span>}
@@ -246,7 +248,8 @@ export default function ScreenerFilters({ filters, onChange, onClose, matchCount
                   placeholder="0"
                   value={filters.minMakers ?? ''}
                   onChange={(e) => update({ minMakers: e.target.value ? Number(e.target.value) : null })}
-                  className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0"
+                  onWheel={(e) => (e.target as HTMLElement).blur()}
+                  className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0 no-spin"
                   style={{ boxShadow: 'none' }}
                 />
               </div>
@@ -259,7 +262,8 @@ export default function ScreenerFilters({ filters, onChange, onClose, matchCount
                   placeholder="0"
                   value={filters.minTxns ?? ''}
                   onChange={(e) => update({ minTxns: e.target.value ? Number(e.target.value) : null })}
-                  className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0"
+                  onWheel={(e) => (e.target as HTMLElement).blur()}
+                  className="flex-1 bg-transparent text-xs text-white font-mono outline-none border-none shadow-none min-w-0 no-spin"
                   style={{ boxShadow: 'none' }}
                 />
               </div>

@@ -33,6 +33,7 @@ interface ColumnDef {
 const columns: ColumnDef[] = [
   { key: 'token', label: 'TOKEN', align: 'left', sortable: false, width: '280px' },
   { key: 'price', label: 'PRICE / %', align: 'right', sortable: true },
+  { key: 'age', label: 'AGE', align: 'right', sortable: true },
   { key: 'volume', label: 'VOLUME', align: 'right', sortable: true },
   { key: 'txns', label: 'TXNS', align: 'right', sortable: true },
   { key: 'liquidity', label: 'LIQUIDITY', align: 'right', sortable: true },

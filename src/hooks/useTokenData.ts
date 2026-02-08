@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { TokenPair, FilterView, Chain } from '@/types/token';
+import { TokenPair, FilterView, TimeFilter, Chain } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { fetchPoolList } from '@/services/api';
 import { getBoostMap } from '@/services/boostStore';
@@ -119,18 +119,32 @@ export function useTokenData(options?: UseTokenDataOptions) {
   };
 }
 
-/** Filter tokens based on view, search, screener filters */
+const STABLECOINS = new Set(['USDC', 'USDT', 'USDC.X', 'DAI', 'BUSD', 'WXNT', 'WSOL']);
+
+function getChangeForTF(t: TokenPair, tf: TimeFilter): number {
+  switch (tf) {
+    case '5m': return t.priceChange5m;
+    case '1h': return t.priceChange1h;
+    case '6h': return t.priceChange6h;
+    case '24h': return t.priceChange24h;
+  }
+}
+
+/** Filter tokens based on view, search, screener filters, timeFilter */
 export function useFilteredTokens(
   tokens: TokenPair[],
   activeView: FilterView,
   favorites: Set<string>,
   searchQuery: string,
   screenerFilters: ScreenerFilterValues,
+  timeFilter: TimeFilter = '24h',
 ) {
   return useMemo(() => {
     let result = tokens;
 
-    if (searchQuery.trim()) {
+    // Search filter
+    const isSearching = searchQuery.trim().length > 0;
+    if (isSearching) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
         (t) =>
@@ -139,8 +153,11 @@ export function useFilteredTokens(
           t.quoteToken.symbol.toLowerCase().includes(q) ||
           t.address.toLowerCase().includes(q),
       );
+      // When searching, return ALL matches sorted by liquidity — skip view filter
+      return [...result].sort((a, b) => b.liquidity - a.liquidity);
     }
 
+    // Screener filters
     if (isFiltersActive(screenerFilters)) {
       const f = screenerFilters;
       result = result.filter((t) => {
@@ -183,13 +200,15 @@ export function useFilteredTokens(
       }
       case 'gainers':
         result = result
-          .filter((t) => t.priceChange24h > 0)
-          .sort((a, b) => b.priceChange24h - a.priceChange24h);
+          .filter((t) => !STABLECOINS.has(t.baseToken.symbol.toUpperCase()))
+          .filter((t) => getChangeForTF(t, timeFilter) > 0)
+          .sort((a, b) => getChangeForTF(b, timeFilter) - getChangeForTF(a, timeFilter));
         break;
       case 'losers':
         result = result
-          .filter((t) => t.priceChange24h < 0)
-          .sort((a, b) => a.priceChange24h - b.priceChange24h);
+          .filter((t) => !STABLECOINS.has(t.baseToken.symbol.toUpperCase()))
+          .filter((t) => getChangeForTF(t, timeFilter) < 0)
+          .sort((a, b) => getChangeForTF(a, timeFilter) - getChangeForTF(b, timeFilter));
         break;
       case 'watchlist':
         result = result.filter((t) => favorites.has(t.address));
@@ -200,5 +219,5 @@ export function useFilteredTokens(
     }
 
     return result;
-  }, [tokens, activeView, favorites, searchQuery, screenerFilters]);
+  }, [tokens, activeView, favorites, searchQuery, screenerFilters, timeFilter]);
 }
