@@ -31,14 +31,14 @@ interface ColumnDef {
 }
 
 const columns: ColumnDef[] = [
-  { key: 'token', label: 'TOKEN', align: 'left', sortable: false, width: 'auto' },
-  { key: 'price', label: 'PRICE / %', align: 'right', sortable: true, width: '120px' },
-  { key: 'volume', label: 'VOLUME', align: 'right', sortable: true, width: '100px' },
-  { key: 'txns', label: 'TXNS', align: 'right', sortable: true, width: '80px' },
-  { key: 'liquidity', label: 'LIQUIDITY', align: 'right', sortable: true, width: '100px' },
-  { key: 'marketCap', label: 'MCAP', align: 'right', sortable: true, width: '100px' },
-  { key: 'makers', label: 'MAKERS', align: 'right', sortable: true, width: '80px' },
-  { key: 'safety', label: 'SAFETY', align: 'center', sortable: true, width: '70px' },
+  { key: 'token', label: 'TOKEN', align: 'left', sortable: false, width: '280px' },
+  { key: 'price', label: 'PRICE / %', align: 'right', sortable: true },
+  { key: 'volume', label: 'VOLUME', align: 'right', sortable: true },
+  { key: 'txns', label: 'TXNS', align: 'right', sortable: true },
+  { key: 'liquidity', label: 'LIQUIDITY', align: 'right', sortable: true },
+  { key: 'marketCap', label: 'MCAP', align: 'right', sortable: true },
+  { key: 'makers', label: 'MAKERS', align: 'right', sortable: true },
+  { key: 'safety', label: 'SAFETY', align: 'center', sortable: true },
   { key: 'chart', label: 'LAST 24H', align: 'center', sortable: false, width: '130px' },
   { key: 'swap', label: '', align: 'center', sortable: false, width: '50px' },
 ];

@@ -115,8 +115,8 @@ export default function TokenRow({
     >
       {/* Token info — no rank numbers */}
       {show('token') && (
-        <td className="px-3 py-3 whitespace-nowrap">
-          <div className="flex items-center gap-2">
+        <td className="px-3 py-3 overflow-hidden">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             {boost && (
               <span className="inline-flex items-center flex-shrink-0" title={boost.tierConfig.name}>
                 {Array.from({ length: boost.tierConfig.boltCount }).map((_, i) => (
