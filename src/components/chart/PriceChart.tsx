@@ -3,11 +3,14 @@
 import { useEffect, useRef } from 'react';
 import { OHLCVData } from '@/types/token';
 
+export type ChartType = 'candles' | 'line' | 'area';
+
 interface PriceChartProps {
   data: OHLCVData[];
+  chartType?: ChartType;
 }
 
-export default function PriceChart({ data }: PriceChartProps) {
+export default function PriceChart({ data, chartType = 'candles' }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
 
@@ -17,7 +20,7 @@ export default function PriceChart({ data }: PriceChartProps) {
     let disposed = false;
 
     async function initChart() {
-      const { createChart, ColorType, CrosshairMode } = await import('lightweight-charts');
+      const { createChart, ColorType, CrosshairMode, LineStyle } = await import('lightweight-charts');
 
       if (disposed || !containerRef.current) return;
 
@@ -41,11 +44,11 @@ export default function PriceChart({ data }: PriceChartProps) {
           mode: CrosshairMode.Normal,
           vertLine: {
             color: 'rgba(5, 102, 234, 0.3)',
-            labelBackgroundColor: '#000000',
+            labelBackgroundColor: '#111',
           },
           horzLine: {
             color: 'rgba(5, 102, 234, 0.3)',
-            labelBackgroundColor: '#000000',
+            labelBackgroundColor: '#111',
           },
         },
         rightPriceScale: {
@@ -60,17 +63,7 @@ export default function PriceChart({ data }: PriceChartProps) {
         handleScroll: { vertTouchDrag: false },
       });
 
-      // Candlestick series
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: '#00e676',
-        downColor: '#ff1744',
-        borderUpColor: '#00e676',
-        borderDownColor: '#ff1744',
-        wickUpColor: '#00e676',
-        wickDownColor: '#ff1744',
-      });
-
-      const formattedData = data.map((d) => ({
+      const formattedCandles = data.map((d) => ({
         time: d.time as any,
         open: d.open,
         high: d.high,
@@ -78,7 +71,42 @@ export default function PriceChart({ data }: PriceChartProps) {
         close: d.close,
       }));
 
-      candleSeries.setData(formattedData);
+      const lineData = data.map((d) => ({
+        time: d.time as any,
+        value: d.close,
+      }));
+
+      if (chartType === 'candles') {
+        const candleSeries = chart.addCandlestickSeries({
+          upColor: '#00e676',
+          downColor: '#ff1744',
+          borderUpColor: '#00e676',
+          borderDownColor: '#ff1744',
+          wickUpColor: '#00e676',
+          wickDownColor: '#ff1744',
+        });
+        candleSeries.setData(formattedCandles);
+      } else if (chartType === 'line') {
+        const lineSeries = chart.addLineSeries({
+          color: '#0566ea',
+          lineWidth: 2,
+          crosshairMarkerVisible: true,
+          crosshairMarkerRadius: 4,
+          crosshairMarkerBackgroundColor: '#0566ea',
+        });
+        lineSeries.setData(lineData);
+      } else if (chartType === 'area') {
+        const areaSeries = chart.addAreaSeries({
+          topColor: 'rgba(5, 102, 234, 0.4)',
+          bottomColor: 'rgba(5, 102, 234, 0.02)',
+          lineColor: '#0566ea',
+          lineWidth: 2,
+          crosshairMarkerVisible: true,
+          crosshairMarkerRadius: 4,
+          crosshairMarkerBackgroundColor: '#0566ea',
+        });
+        areaSeries.setData(lineData);
+      }
 
       // Volume series
       const volumeSeries = chart.addHistogramSeries({
@@ -126,7 +154,7 @@ export default function PriceChart({ data }: PriceChartProps) {
         chartRef.current = null;
       }
     };
-  }, [data]);
+  }, [data, chartType]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
