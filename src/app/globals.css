@@ -99,11 +99,11 @@ html, body {
   color: #0566ea;
 }
 
-/* Search input focus glow */
+/* Remove all input focus glow/border */
 input:focus {
   outline: none;
-  border-color: #0566ea;
-  box-shadow: 0 0 0 1px rgba(5, 102, 234, 0.3);
+  border-color: inherit;
+  box-shadow: none;
 }
 
 /* Star/favorite animation */
