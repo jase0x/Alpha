@@ -537,7 +537,7 @@ function AlphaPageContent() {
             <div className="w-px h-5 bg-xdex-border/60 mx-1 hidden sm:block" />
 
             {/* Filter tabs — hide on very small screens */}
-            <div className="hidden sm:flex items-center gap-0.5">
+            <div className="hidden sm:flex items-center gap-1 bg-[#111] rounded-xl p-1 border border-[#333]">
               {filterTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeView === tab.id;
@@ -547,17 +547,17 @@ function AlphaPageContent() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveView(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold rounded-lg transition-all ${
                       isActive
-                        ? `${tab.activeColor}`
-                        : 'text-xdex-text-muted hover:text-xdex-text hover:bg-white/[0.03]'
+                        ? `${tab.activeColor} border border-current/20`
+                        : 'text-xdex-text-secondary hover:text-white hover:bg-white/[0.05]'
                     }`}
                   >
-                    <Icon size={12} strokeWidth={isActive ? 2.2 : 1.6} />
+                    <Icon size={14} strokeWidth={isActive ? 2.4 : 1.8} />
                     <span className="hidden md:inline">{tab.label}</span>
                     {count > 0 && (
-                      <span className={`text-[10px] px-1 py-0.5 rounded-full ${
-                        isActive ? 'bg-white/10' : 'bg-xdex-border/40'
+                      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
+                        isActive ? 'bg-white/15' : 'bg-[#222]'
                       }`}>
                         {count}
                       </span>
@@ -568,10 +568,10 @@ function AlphaPageContent() {
             </div>
 
             {/* Divider */}
-            <div className="w-px h-5 bg-xdex-border/60 mx-1 hidden sm:block" />
+            <div className="w-px h-6 bg-[#333] mx-1.5 hidden sm:block" />
 
             {/* Price timeframe toggle */}
-            <div className="hidden sm:flex items-center bg-black/50 rounded-lg p-0.5 border border-xdex-accent/15">
+            <div className="hidden sm:flex items-center bg-[#111] rounded-xl p-1 border border-[#333]">
               {([
                 { value: '5m' as TimeFilter, label: '5M' },
                 { value: '1h' as TimeFilter, label: '1H' },
@@ -581,10 +581,10 @@ function AlphaPageContent() {
                 <button
                   key={opt.value}
                   onClick={() => setPriceTimeFilter(opt.value)}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
+                  className={`px-3 py-1.5 text-[13px] font-bold rounded-lg transition-all ${
                     priceTimeFilter === opt.value
-                      ? 'bg-xdex-accent text-white'
-                      : 'text-xdex-text-muted hover:text-white'
+                      ? 'bg-xdex-accent text-white shadow-md shadow-xdex-accent/20'
+                      : 'text-xdex-text-secondary hover:text-white hover:bg-white/[0.05]'
                   }`}
                 >
                   {opt.label}
