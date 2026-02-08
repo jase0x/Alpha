@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import { TokenPair, SortField, SortDirection } from '@/types/token';
+import { TokenPair, SortField, SortDirection, TimeFilter } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { ColumnId } from '@/utils/columnPrefs';
 import { computeSafetyScore } from '@/utils/safetyScore';
@@ -19,8 +19,10 @@ interface TokenTableProps {
   selectedIndex?: number;
 }
 
+type SortableField = SortField | 'safety';
+
 interface ColumnDef {
-  key: SortField | 'token' | 'safety';
+  key: SortableField | 'token' | 'chart' | 'swap';
   label: string;
   align: 'left' | 'right' | 'center';
   sortable: boolean;
@@ -28,23 +30,30 @@ interface ColumnDef {
 
 const columns: ColumnDef[] = [
   { key: 'token', label: 'TOKEN', align: 'left', sortable: false },
-  { key: 'price', label: 'PRICE', align: 'right', sortable: true },
-  { key: 'age', label: 'AGE', align: 'right', sortable: true },
-  { key: 'txns', label: 'TXNS', align: 'right', sortable: true },
+  { key: 'price', label: 'PRICE / %', align: 'right', sortable: true },
   { key: 'volume', label: 'VOLUME', align: 'right', sortable: true },
-  { key: 'makers', label: 'MAKERS', align: 'right', sortable: true },
-  { key: 'priceChange5m', label: '5M', align: 'right', sortable: true },
-  { key: 'priceChange1h', label: '1H', align: 'right', sortable: true },
-  { key: 'priceChange6h', label: '6H', align: 'right', sortable: true },
-  { key: 'priceChange24h', label: '24H', align: 'right', sortable: true },
+  { key: 'txns', label: 'TXNS', align: 'right', sortable: true },
   { key: 'liquidity', label: 'LIQUIDITY', align: 'right', sortable: true },
   { key: 'marketCap', label: 'MCAP', align: 'right', sortable: true },
+  { key: 'makers', label: 'MAKERS', align: 'right', sortable: true },
   { key: 'safety', label: 'SAFETY', align: 'center', sortable: true },
+  { key: 'chart', label: 'LAST 24H', align: 'center', sortable: false },
+  { key: 'swap', label: '', align: 'center', sortable: false },
 ];
 
-function getSortValue(token: TokenPair, field: SortField | 'safety'): number {
+const timeOptions: { value: TimeFilter; label: string }[] = [
+  { value: '5m', label: '5M' },
+  { value: '1h', label: '1H' },
+  { value: '6h', label: '6H' },
+  { value: '24h', label: '24H' },
+];
+
+function getSortValue(token: TokenPair, field: SortableField, tf: TimeFilter): number {
   switch (field) {
-    case 'price': return token.priceUsd;
+    case 'price': {
+      const pc = tf === '5m' ? token.priceChange5m : tf === '1h' ? token.priceChange1h : tf === '6h' ? token.priceChange6h : token.priceChange24h;
+      return pc;
+    }
     case 'age': return token.createdAt;
     case 'txns': return token.txns24h;
     case 'volume': return token.volume24h;
@@ -70,12 +79,13 @@ export default function TokenTable({
   visibleColumns,
   selectedIndex,
 }: TokenTableProps) {
-  const [sortField, setSortField] = useState<SortField | 'safety'>('volume');
+  const [sortField, setSortField] = useState<SortableField>('volume');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h');
 
   const handleSort = (field: string) => {
-    if (field === 'token') return;
-    const sf = field as SortField | 'safety';
+    if (field === 'token' || field === 'chart' || field === 'swap') return;
+    const sf = field as SortableField;
     if (sortField === sf) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     } else {
@@ -86,16 +96,19 @@ export default function TokenTable({
 
   const filteredColumns = useMemo(() => {
     if (!visibleColumns) return columns;
-    return columns.filter((c) => visibleColumns.has(c.key as ColumnId));
+    return columns.filter((c) => {
+      if (c.key === 'swap' || c.key === 'chart') return true;
+      return visibleColumns.has(c.key as ColumnId);
+    });
   }, [visibleColumns]);
 
   const sortedTokens = useMemo(() => {
     return [...tokens].sort((a, b) => {
-      const aVal = getSortValue(a, sortField);
-      const bVal = getSortValue(b, sortField);
+      const aVal = getSortValue(a, sortField, timeFilter);
+      const bVal = getSortValue(b, sortField, timeFilter);
       return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
     });
-  }, [tokens, sortField, sortDir]);
+  }, [tokens, sortField, sortDir, timeFilter]);
 
   return (
     <div className="flex-1 overflow-auto">
@@ -112,23 +125,52 @@ export default function TokenTable({
                     ? 'cursor-pointer select-none hover:text-xdex-accent transition-colors'
                     : ''
                 } ${sortField === col.key ? 'text-xdex-accent' : 'text-xdex-text-muted'}`}
-                style={col.key === 'token' ? { width: '1px' } : undefined}
+                style={
+                  col.key === 'token' ? { width: '1px' } :
+                  col.key === 'swap' ? { width: '44px' } :
+                  col.key === 'chart' ? { width: '130px' } :
+                  undefined
+                }
                 onClick={() => col.sortable && handleSort(col.key)}
               >
-                <div
-                  className={`flex items-center gap-1 ${
-                    col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
-                  }`}
-                >
-                  <span>{col.label}</span>
-                  {col.sortable && sortField === col.key && (
-                    sortDir === 'desc' ? (
-                      <ChevronDown size={12} />
-                    ) : (
-                      <ChevronUp size={12} />
-                    )
-                  )}
-                </div>
+                {col.key === 'price' ? (
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <span>PRICE</span>
+                    <div className="flex items-center bg-xdex-border/60 rounded overflow-hidden">
+                      {timeOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={(e) => { e.stopPropagation(); setTimeFilter(opt.value); }}
+                          className={`px-1.5 py-0.5 text-[9px] font-bold transition-colors ${
+                            timeFilter === opt.value
+                              ? 'bg-xdex-accent text-white'
+                              : 'text-xdex-text-muted hover:text-white'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {sortField === col.key && (
+                      sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    className={`flex items-center gap-1 ${
+                      col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
+                    }`}
+                  >
+                    {col.label && <span>{col.label}</span>}
+                    {col.sortable && sortField === col.key && (
+                      sortDir === 'desc' ? (
+                        <ChevronDown size={12} />
+                      ) : (
+                        <ChevronUp size={12} />
+                      )
+                    )}
+                  </div>
+                )}
               </th>
             ))}
           </tr>
@@ -146,6 +188,7 @@ export default function TokenTable({
               boost={boostMap?.get(token.address.toLowerCase()) ?? null}
               visibleColumns={visibleColumns}
               isSelected={selectedIndex === index}
+              timeFilter={timeFilter}
             />
           ))}
         </tbody>

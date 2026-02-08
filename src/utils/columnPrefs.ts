@@ -4,23 +4,20 @@ const STORAGE_KEY = 'alpha-column-prefs';
 
 export type ColumnId =
   | 'token' | 'price' | 'age' | 'txns' | 'volume'
-  | 'makers' | 'priceChange5m' | 'priceChange1h'
-  | 'priceChange6h' | 'priceChange24h' | 'liquidity' | 'marketCap' | 'safety';
+  | 'makers' | 'liquidity' | 'marketCap' | 'safety' | 'chart' | 'swap';
 
 export const ALL_COLUMNS: { id: ColumnId; label: string; defaultVisible: boolean }[] = [
   { id: 'token', label: 'TOKEN', defaultVisible: true },
-  { id: 'price', label: 'PRICE', defaultVisible: true },
+  { id: 'price', label: 'PRICE / %', defaultVisible: true },
   { id: 'age', label: 'AGE', defaultVisible: true },
-  { id: 'txns', label: 'TXNS', defaultVisible: true },
   { id: 'volume', label: 'VOLUME', defaultVisible: true },
-  { id: 'makers', label: 'MAKERS', defaultVisible: true },
-  { id: 'priceChange5m', label: '5M', defaultVisible: true },
-  { id: 'priceChange1h', label: '1H', defaultVisible: true },
-  { id: 'priceChange6h', label: '6H', defaultVisible: true },
-  { id: 'priceChange24h', label: '24H', defaultVisible: true },
+  { id: 'txns', label: 'TXNS', defaultVisible: true },
   { id: 'liquidity', label: 'LIQUIDITY', defaultVisible: true },
   { id: 'marketCap', label: 'MCAP', defaultVisible: true },
+  { id: 'makers', label: 'MAKERS', defaultVisible: true },
   { id: 'safety', label: 'SAFETY', defaultVisible: true },
+  { id: 'chart', label: 'LAST 24H', defaultVisible: true },
+  { id: 'swap', label: '', defaultVisible: true },
 ];
 
 export function getVisibleColumns(): Set<ColumnId> {
@@ -29,7 +26,14 @@ export function getVisibleColumns(): Set<ColumnId> {
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return new Set(JSON.parse(raw));
+    if (raw) {
+      const parsed = new Set<ColumnId>(JSON.parse(raw));
+      // Always include token, chart, swap
+      parsed.add('token');
+      parsed.add('chart');
+      parsed.add('swap');
+      return parsed;
+    }
   } catch {}
   return new Set(ALL_COLUMNS.filter((c) => c.defaultVisible).map((c) => c.id));
 }

@@ -74,11 +74,11 @@ const filterTabs: {
   icon: React.ComponentType<any>;
   activeColor: string;
 }[] = [
-  { id: 'all', label: 'All Pairs', icon: Layers, activeColor: 'text-xdex-accent border-xdex-accent' },
-  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-xdex-orange border-xdex-orange' },
-  { id: 'gainers', label: 'Gainers', icon: TrendingUp, activeColor: 'text-xdex-green border-xdex-green' },
-  { id: 'losers', label: 'Losers', icon: TrendingDown, activeColor: 'text-xdex-red border-xdex-red' },
-  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-xdex-yellow border-xdex-yellow' },
+  { id: 'all', label: 'All Pairs', icon: Layers, activeColor: 'text-xdex-accent bg-xdex-accent/10' },
+  { id: 'new', label: 'New Pairs', icon: Flame, activeColor: 'text-xdex-orange bg-xdex-orange/10' },
+  { id: 'gainers', label: 'Gainers', icon: TrendingUp, activeColor: 'text-xdex-green bg-xdex-green/10' },
+  { id: 'losers', label: 'Losers', icon: TrendingDown, activeColor: 'text-xdex-red bg-xdex-red/10' },
+  { id: 'watchlist', label: 'Watchlist', icon: Bookmark, activeColor: 'text-xdex-yellow bg-xdex-yellow/10' },
 ];
 
 const filterViewIds: FilterView[] = ['all', 'new', 'gainers', 'losers', 'watchlist'];
@@ -537,10 +537,10 @@ function AlphaPageContent() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveView(tab.id)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
                       isActive
-                        ? `${tab.activeColor} bg-white/5 border-b-2`
-                        : 'text-xdex-text-muted hover:text-xdex-text hover:bg-white/[0.03] border-b-2 border-transparent'
+                        ? `${tab.activeColor}`
+                        : 'text-xdex-text-muted hover:text-xdex-text hover:bg-white/[0.03]'
                     }`}
                   >
                     <Icon size={12} strokeWidth={isActive ? 2.2 : 1.6} />
