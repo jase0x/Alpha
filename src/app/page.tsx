@@ -526,11 +526,11 @@ function AlphaPageContent() {
             </button>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-white tracking-tight">Alpha</span>
+              <span className="text-base font-bold text-white tracking-tight">Alpha</span>
             </div>
             <div className="flex items-center gap-1 ml-1">
               <div className="w-1.5 h-1.5 rounded-full bg-xdex-green live-dot" />
-              <span className="text-[10px] text-xdex-green font-medium">LIVE</span>
+              <span className="text-[11px] text-xdex-green font-medium">LIVE</span>
             </div>
 
             {/* Divider */}
@@ -547,7 +547,7 @@ function AlphaPageContent() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveView(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                       isActive
                         ? `${tab.activeColor}`
                         : 'text-xdex-text-muted hover:text-xdex-text hover:bg-white/[0.03]'
@@ -556,7 +556,7 @@ function AlphaPageContent() {
                     <Icon size={12} strokeWidth={isActive ? 2.2 : 1.6} />
                     <span className="hidden md:inline">{tab.label}</span>
                     {count > 0 && (
-                      <span className={`text-[9px] px-1 py-0.5 rounded-full ${
+                      <span className={`text-[10px] px-1 py-0.5 rounded-full ${
                         isActive ? 'bg-white/10' : 'bg-xdex-border/40'
                       }`}>
                         {count}
@@ -581,7 +581,7 @@ function AlphaPageContent() {
                 <button
                   key={opt.value}
                   onClick={() => setPriceTimeFilter(opt.value)}
-                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
                     priceTimeFilter === opt.value
                       ? 'bg-xdex-accent text-white'
                       : 'text-xdex-text-muted hover:text-white'
@@ -601,7 +601,7 @@ function AlphaPageContent() {
                 placeholder="Search tokens..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-xs text-white placeholder:text-xdex-text-muted outline-none w-28 focus:w-40 transition-all"
+                className="bg-transparent text-[13px] text-white placeholder:text-xdex-text-muted outline-none w-28 focus:w-40 transition-all"
               />
               {searchQuery && (
                 <button

@@ -138,7 +138,7 @@ export default function Header({ tokens, allTokens, onTokenClick }: HeaderProps)
           <div key={idx} className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-1.5">
               {item.icon}
-              <span className="text-[11px] font-semibold text-xdex-text-muted uppercase tracking-wider">
+              <span className="text-xs font-semibold text-xdex-text-muted uppercase tracking-wider">
                 {item.label}
               </span>
             </div>
@@ -156,8 +156,8 @@ export default function Header({ tokens, allTokens, onTokenClick }: HeaderProps)
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                 )}
-                <span className="text-[11px] font-medium text-white">{t.symbol}</span>
-                <span className={`text-[11px] font-mono font-medium ${t.color}`}>{t.value}</span>
+                <span className="text-xs font-medium text-white">{t.symbol}</span>
+                <span className={`text-xs font-mono font-medium ${t.color}`}>{t.value}</span>
               </div>
             ))}
             <div className="w-px h-3 bg-xdex-border/60" />

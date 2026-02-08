@@ -303,15 +303,15 @@ function mapPoolToPair(p: any, chain: Chain): TokenPair {
     }
   }
 
-  // Volume — use the real USD volume fields from API
+  // Volume — use the max of the two sides (they represent the same trades)
   const vol1Usd = Number(p.token1_volume_usd_24h || 0);
   const vol2Usd = Number(p.token2_volume_usd_24h || 0);
-  let volumeUsd = vol1Usd + vol2Usd;
+  let volumeUsd = Math.max(vol1Usd, vol2Usd);
 
   if (volumeUsd === 0) {
     const tradeVol1 = Number(p.token1_total_trade_amount || 0) * (token1Price || priceUsd);
     const tradeVol2 = Number(p.token2_total_trade_amount || 0) * (token2Price || priceUsd);
-    volumeUsd = tradeVol1 + tradeVol2;
+    volumeUsd = Math.max(tradeVol1, tradeVol2);
   }
 
   // Transaction count — use the real txns_24h field directly

@@ -86,7 +86,7 @@ export default function Sidebar({
       {/* XDEX Navigation */}
       {!collapsed && (
         <div className="px-4 pb-1.5 pt-3">
-          <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
+          <span className="text-[11px] font-semibold text-xdex-text-muted uppercase tracking-widest">
             Platform
           </span>
         </div>
@@ -104,7 +104,7 @@ export default function Sidebar({
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03] ${
+                className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg mb-0.5 transition-all text-xdex-text-secondary hover:text-xdex-text hover:bg-white/[0.03] ${
                   collapsed ? 'justify-center px-0' : ''
                 }`}
               >
@@ -123,7 +123,7 @@ export default function Sidebar({
             <div key={item.id}>
               <button
                 disabled={item.comingSoon}
-                className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] rounded-lg mb-0.5 transition-all ${
+                className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg mb-0.5 transition-all ${
                   isActive
                     ? 'text-xdex-accent bg-xdex-accent/10 border border-xdex-accent/20'
                     : item.comingSoon
@@ -136,7 +136,7 @@ export default function Sidebar({
                   <>
                     <span className="font-medium">{item.label}</span>
                     {item.comingSoon && (
-                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-[#222]/60 text-xdex-text-muted">
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-[#222]/60 text-xdex-text-muted">
                         Soon
                       </span>
                     )}
@@ -149,14 +149,14 @@ export default function Sidebar({
                 <div className="ml-7 mb-1 space-y-0.5">
                   <button
                     onClick={onAdvertise}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-[12px] rounded-md text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 transition-all"
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-[13px] rounded-md text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 transition-all"
                   >
                     <Zap size={13} strokeWidth={1.8} className="flex-shrink-0" />
                     <span>Advertise</span>
                   </button>
                   <button
                     onClick={onProfile}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-[12px] rounded-md text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 transition-all"
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-[13px] rounded-md text-xdex-text-secondary hover:text-xdex-accent hover:bg-xdex-accent/5 transition-all"
                   >
                     <User size={13} strokeWidth={1.8} className="flex-shrink-0" />
                     <span>My Boosts</span>
@@ -174,7 +174,7 @@ export default function Sidebar({
           href="https://app.xdex.xyz/launchpad"
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center gap-2 w-full py-2.5 text-[13px] font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
+          className={`flex items-center gap-2 w-full py-2.5 text-sm font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-xdex-accent/20 to-xdex-accent/10 border border-xdex-accent/30 hover:border-xdex-accent/60 hover:from-xdex-accent/30 hover:to-xdex-accent/15 ${
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
@@ -187,7 +187,7 @@ export default function Sidebar({
       <div className={`px-2 pt-1 pb-2 border-t border-[#222] mt-1 ${collapsed ? 'px-1' : ''}`}>
         {!collapsed && (
           <div className="px-2 pt-2 pb-1.5">
-            <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
+            <span className="text-[11px] font-semibold text-xdex-text-muted uppercase tracking-widest">
               Network
             </span>
           </div>
@@ -205,7 +205,7 @@ export default function Sidebar({
             {!collapsed && (
               <>
                 <span>X1</span>
-                <span className={`text-[9px] ml-auto px-1.5 py-0.5 rounded-full ${
+                <span className={`text-[10px] ml-auto px-1.5 py-0.5 rounded-full ${
                   activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-[#222]/60'
                 }`}>
                   {x1Count}
@@ -225,7 +225,7 @@ export default function Sidebar({
             {!collapsed && (
               <>
                 <span>Solana</span>
-                <span className={`text-[9px] ml-auto px-1.5 py-0.5 rounded-full ${
+                <span className={`text-[10px] ml-auto px-1.5 py-0.5 rounded-full ${
                   activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-[#222]/60'
                 }`}>
                   {solanaCount}

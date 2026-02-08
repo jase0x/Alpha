@@ -75,7 +75,7 @@ export default function TokenTable({
   selectedIndex,
   timeFilter = '24h',
 }: TokenTableProps) {
-  const [sortField, setSortField] = useState<SortableField>('volume');
+  const [sortField, setSortField] = useState<SortableField>('safety');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
 
   const handleSort = (field: string) => {
@@ -121,7 +121,7 @@ export default function TokenTable({
             {filteredColumns.map((col) => (
               <th
                 key={col.key}
-                className={`px-2 py-2.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
+                className={`px-2 py-2.5 text-[13px] font-semibold uppercase tracking-wider whitespace-nowrap ${
                   col.align === 'left' ? 'text-left' : col.align === 'right' ? 'text-right' : 'text-center'
                 } ${
                   col.sortable
@@ -169,7 +169,7 @@ export default function TokenTable({
         </tbody>
       </table>
       {sortedTokens.length === 0 && (
-        <div className="flex items-center justify-center py-20 text-xdex-text-muted">
+        <div className="flex items-center justify-center py-20 text-base text-xdex-text-muted">
           No pairs found
         </div>
       )}
