@@ -25,6 +25,8 @@ function XdexLogo({ size }: { size: number }) {
 }
 
 interface SidebarProps {
+  /** Which nav item to highlight — default 'alpha' */
+  activePage?: string;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onAdvertise?: () => void;
@@ -40,7 +42,6 @@ const xdexNavItems: {
   label: string;
   icon: React.ComponentType<any>;
   href: string;
-  isActive?: boolean;
   isExternal?: boolean;
   comingSoon?: boolean;
 }[] = [
@@ -48,12 +49,13 @@ const xdexNavItems: {
   { id: 'liquidity', label: 'Liquidity', icon: Droplets, href: 'https://app.xdex.xyz/liquidity', isExternal: true },
   { id: 'farm', label: 'Farm', icon: Sprout, href: 'https://app.xdex.xyz/farm', isExternal: true },
   { id: 'stake', label: 'Stake', icon: Shield, href: 'https://app.xdex.xyz/stake', isExternal: true },
-  { id: 'alpha', label: 'Alpha Scan', icon: ScanSearch, href: '#', isActive: true },
+  { id: 'alpha', label: 'Alpha Scan', icon: ScanSearch, href: '/alpha' },
   { id: 'lendx', label: 'LendX', icon: Landmark, href: '#', comingSoon: true },
   { id: 'governance', label: 'Governance', icon: Vote, href: '#', comingSoon: true },
 ];
 
 export default function Sidebar({
+  activePage = 'alpha',
   collapsed: controlledCollapsed,
   onCollapsedChange,
   onAdvertise,
@@ -95,7 +97,7 @@ export default function Sidebar({
       <nav className="px-2 pt-1">
         {xdexNavItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.isActive;
+          const isActive = item.id === activePage;
 
           if (item.isExternal) {
             return (
