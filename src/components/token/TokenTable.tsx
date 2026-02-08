@@ -112,6 +112,7 @@ export default function TokenTable({
                     ? 'cursor-pointer select-none hover:text-xdex-accent transition-colors'
                     : ''
                 } ${sortField === col.key ? 'text-xdex-accent' : 'text-xdex-text-muted'}`}
+                style={col.key === 'token' ? { width: '1px' } : undefined}
                 onClick={() => col.sortable && handleSort(col.key)}
               >
                 <div

@@ -66,7 +66,7 @@ export default function TokenRow({
     >
       {/* Token info */}
       {show('token') && (
-        <td className="px-2 py-2.5">
+        <td className="px-2 py-2.5 whitespace-nowrap" style={{ width: '1px' }}>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-xdex-text-muted font-mono w-5 text-right flex-shrink-0">
               {rank}
