@@ -162,6 +162,8 @@ export async function fetchOHLCV(
       '1h': { resolution: '1h', seconds: 7 * 24 * 3600 },
       '4h': { resolution: '4h', seconds: 30 * 24 * 3600 },
       '1d': { resolution: '1D', seconds: 180 * 24 * 3600 },
+      '7d': { resolution: '1h', seconds: 7 * 24 * 3600 },
+      '30d': { resolution: '4h', seconds: 30 * 24 * 3600 },
     };
 
     const config = resolutionMap[timeframe] || resolutionMap['1h'];

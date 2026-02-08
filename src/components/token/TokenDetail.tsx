@@ -145,8 +145,7 @@ export default function TokenDetail({
   useEffect(() => {
     let cancelled = false;
     setChartLoading(true);
-    const tfMap: Record<string, string> = { '1m': '5m', '7d': '1d', '30d': '1d' };
-    const tf = tfMap[chartTimeframe] || chartTimeframe;
+    const tf = chartTimeframe === '1m' ? '5m' : chartTimeframe;
     fetchOHLCV(token, tf).then((data) => {
       if (!cancelled) {
         setChartData(data);
@@ -178,8 +177,7 @@ export default function TokenDetail({
 
   const refreshData = useCallback(async () => {
     setChartLoading(true);
-    const tfMapR: Record<string, string> = { '1m': '5m', '7d': '1d', '30d': '1d' };
-    const tf = tfMapR[chartTimeframe] || chartTimeframe;
+    const tf = chartTimeframe === '1m' ? '5m' : chartTimeframe;
     const [chartResult, poolResult, extResult] = await Promise.allSettled([
       fetchOHLCV(token, tf),
       fetchPoolDetail(token.address, token.chain),
