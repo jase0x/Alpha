@@ -7,7 +7,6 @@ import { ColumnId, getVisibleColumns, saveVisibleColumns, exportTokensCSV, downl
 import { useToast } from '@/components/ui/Toast';
 import { useTokenData, useFilteredTokens } from '@/hooks/useTokenData';
 import { DEFAULT_FILTERS, isFiltersActive, ScreenerFilterValues } from '@/components/screener/ScreenerFilters';
-import XDEXLayout from '@/components/layout/XDEXLayout';
 import FilterBar from '@/components/screener/FilterBar';
 import TokenTable from '@/components/token/TokenTable';
 import TokenDetail from '@/components/token/TokenDetail';
@@ -244,21 +243,7 @@ function AlphaPageContent() {
   }, [activeView, activeChain, searchQuery]);
 
   return (
-    <XDEXLayout
-      activePage="alpha"
-      activeChain={activeChain}
-      onChainChange={setActiveChain}
-      x1Count={x1Tokens.length}
-      solanaCount={solanaTokens.length}
-      onAdvertise={() => setShowBoostForm(true)}
-      onProfile={() => setShowBoostProfile(true)}
-      onTrendingTokenClick={(token) => {
-        setActiveChain(token.chain);
-        setSelectedToken(token);
-      }}
-      trendingTokens={tokens}
-      allTrendingTokens={allTokens}
-    >
+    <div className="flex-1 flex flex-col min-w-0 h-full">
       {/* Filter bar */}
       <FilterBar
         activeView={activeView}
@@ -412,6 +397,6 @@ function AlphaPageContent() {
           }}
         />
       )}
-    </XDEXLayout>
+    </div>
   );
 }
