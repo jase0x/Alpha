@@ -135,7 +135,9 @@ export default function TokenTable({
                     col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
                   }`}
                 >
-                  {col.label && <span>{col.label}</span>}
+                  {col.key === 'price' ? (
+                    <span>PRICE / {timeFilter.toUpperCase()}</span>
+                  ) : col.label ? <span>{col.label}</span> : null}
                   {col.sortable && sortField === col.key && (
                     sortDir === 'desc' ? (
                       <ChevronDown size={12} />

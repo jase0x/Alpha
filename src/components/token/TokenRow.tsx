@@ -37,30 +37,53 @@ function getChangeForFilter(token: TokenPair, tf: TimeFilter): number {
   }
 }
 
-/** Mini sparkline SVG derived from price-change data points */
+/** Mini sparkline SVG with interpolated points for squiggly look */
 function Sparkline({ token }: { token: TokenPair }) {
   const points = useMemo(() => {
     const now = token.priceUsd;
     if (now <= 0) return null;
     const safe = (pct: number) => { const v = now / (1 + pct / 100); return isFinite(v) && v > 0 ? v : now; };
-    const pts = [safe(token.priceChange24h), safe(token.priceChange6h), safe(token.priceChange1h), safe(token.priceChange5m), now];
-    const min = Math.min(...pts);
-    const max = Math.max(...pts);
-    const range = max - min;
-    const xs = [0, 27, 55, 83, 110];
-    // When data is flat (all same price / 0% changes), show a gentle wave
-    if (range === 0) {
-      const wave = [0.45, 0.6, 0.38, 0.55, 0.5];
-      return pts.map((_, i) => ({ x: xs[i], y: 4 + wave[i] * 24 }));
+    // 5 anchor points from real data
+    const anchors = [safe(token.priceChange24h), safe(token.priceChange6h), safe(token.priceChange1h), safe(token.priceChange5m), now];
+
+    // Interpolate to 20 points with micro-variation for squiggly look
+    const numPoints = 20;
+    const expanded: number[] = [];
+    // Use token address as a seed for deterministic "randomness"
+    const seed = token.address.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    for (let i = 0; i < numPoints; i++) {
+      const t = i / (numPoints - 1); // 0 to 1
+      const anchorIdx = t * (anchors.length - 1);
+      const lo = Math.floor(anchorIdx);
+      const hi = Math.min(lo + 1, anchors.length - 1);
+      const frac = anchorIdx - lo;
+      const base = anchors[lo] + (anchors[hi] - anchors[lo]) * frac;
+      // Deterministic micro-noise based on position + seed
+      const noise = Math.sin(seed * 0.1 + i * 2.7) * 0.015 + Math.cos(seed * 0.3 + i * 1.3) * 0.01;
+      expanded.push(base * (1 + noise));
     }
-    return pts.map((p, i) => ({ x: xs[i], y: 28 - ((p - min) / range) * 28 }));
-  }, [token.priceUsd, token.priceChange24h, token.priceChange6h, token.priceChange1h, token.priceChange5m]);
+
+    const min = Math.min(...expanded);
+    const max = Math.max(...expanded);
+    const range = max - min;
+    // When data is truly flat, create gentle movement
+    if (range === 0) {
+      return expanded.map((_, i) => ({
+        x: (i / (numPoints - 1)) * 110,
+        y: 16 + Math.sin(seed * 0.1 + i * 0.7) * 8 + Math.cos(seed * 0.3 + i * 1.1) * 4,
+      }));
+    }
+    return expanded.map((p, i) => ({
+      x: (i / (numPoints - 1)) * 110,
+      y: 2 + (1 - (p - min) / range) * 28,
+    }));
+  }, [token.priceUsd, token.priceChange24h, token.priceChange6h, token.priceChange1h, token.priceChange5m, token.address]);
 
   if (!points) return <div className="w-[110px] h-[32px]" />;
 
   const isUp = token.priceChange24h >= 0;
   const color = isUp ? '#00e676' : '#ff1744';
-  const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
   return (
     <svg width={110} height={32} viewBox="0 0 110 32" className="flex-shrink-0">
