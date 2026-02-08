@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Star, AlertTriangle, Zap, Shield } from 'lucide-react';
+import { Star, AlertTriangle, Zap, Shield, RefreshCw } from 'lucide-react';
 import { TokenPair, TimeFilter } from '@/types/token';
 import { ActiveBoost } from '@/types/boost';
 import { ColumnId } from '@/utils/columnPrefs';
@@ -46,15 +46,20 @@ function Sparkline({ token }: { token: TokenPair }) {
     const pts = [safe(token.priceChange24h), safe(token.priceChange6h), safe(token.priceChange1h), safe(token.priceChange5m), now];
     const min = Math.min(...pts);
     const max = Math.max(...pts);
-    const range = max - min || 1;
+    const range = max - min;
     const xs = [0, 27, 55, 83, 110];
+    // When data is flat (all same price / 0% changes), show a gentle wave
+    if (range === 0) {
+      const wave = [0.45, 0.6, 0.38, 0.55, 0.5];
+      return pts.map((_, i) => ({ x: xs[i], y: 4 + wave[i] * 24 }));
+    }
     return pts.map((p, i) => ({ x: xs[i], y: 28 - ((p - min) / range) * 28 }));
   }, [token.priceUsd, token.priceChange24h, token.priceChange6h, token.priceChange1h, token.priceChange5m]);
 
   if (!points) return <div className="w-[110px] h-[32px]" />;
 
   const isUp = token.priceChange24h >= 0;
-  const color = isUp ? '#22c55e' : '#ff1744';
+  const color = isUp ? '#00e676' : '#ff1744';
   const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
 
   return (
@@ -102,7 +107,7 @@ export default function TokenRow({
 
   return (
     <tr
-      className={`token-row border-b border-xdex-border/50 cursor-pointer ${
+      className={`token-row border-b border-xdex-accent/15 cursor-pointer ${
         boost?.tierConfig.hasGlow ? 'boosted-row' : ''
       } ${isSelected ? 'token-row-selected' : ''}`}
       onClick={() => onClick(token)}
@@ -110,7 +115,7 @@ export default function TokenRow({
     >
       {/* Token info — no rank numbers */}
       {show('token') && (
-        <td className="px-3 py-3 whitespace-nowrap" style={{ width: '1px' }}>
+        <td className="px-3 py-3 whitespace-nowrap">
           <div className="flex items-center gap-2">
             {boost && (
               <span className="inline-flex items-center flex-shrink-0" title={boost.tierConfig.name}>
@@ -133,16 +138,16 @@ export default function TokenRow({
 
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-[13px] text-white">{token.baseToken.symbol}</span>
+                <span className="font-semibold text-sm text-white">{token.baseToken.symbol}</span>
                 {token.isVerified && <span className="text-xdex-accent text-[10px]" title="Verified">&#10003;</span>}
-                <span className="text-[11px] text-xdex-text-secondary truncate">{token.baseToken.name}</span>
-                <span className="text-xdex-text-muted text-[11px]">/</span>
-                <span className="text-[11px] text-xdex-text-muted">{token.quoteToken.symbol}</span>
+                <span className="text-xs text-xdex-text-secondary truncate">{token.baseToken.name}</span>
+                <span className="text-xdex-text-muted text-xs">/</span>
+                <span className="text-xs text-xdex-text-muted">{token.quoteToken.symbol}</span>
                 {isLowLiquidity && <span title="Low liquidity" className="flex-shrink-0"><AlertTriangle size={10} className="text-xdex-yellow/70" /></span>}
-                {isNew && <span className="text-[8px] px-1 py-0.5 rounded bg-xdex-accent/15 text-xdex-accent font-semibold flex-shrink-0">NEW</span>}
+                {isNew && <span className="text-[9px] px-1 py-0.5 rounded bg-xdex-accent/15 text-xdex-accent font-semibold flex-shrink-0">NEW</span>}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] text-xdex-text-muted">{formatAge(token.createdAt)}</span>
+                <span className="text-[11px] text-xdex-text-muted">{formatAge(token.createdAt)}</span>
               </div>
             </div>
           </div>
@@ -152,38 +157,38 @@ export default function TokenRow({
       {/* Price + % change stacked */}
       {show('price') && (
         <td className="px-2 py-3 text-right">
-          <div className="text-[13px] text-white font-mono font-medium">{formatPrice(token.priceUsd)}</div>
-          <div className={`text-[11px] font-mono font-medium mt-0.5 ${getPercentColor(priceChange)}`}>{formatPercent(priceChange)}</div>
+          <div className="text-sm text-white font-mono font-medium">{formatPrice(token.priceUsd)}</div>
+          <div className={`text-xs font-mono font-medium mt-0.5 ${getPercentColor(priceChange)}`}>{formatPercent(priceChange)}</div>
         </td>
       )}
 
       {show('volume') && (
         <td className="px-2 py-3 text-right">
-          <span className="text-[13px] text-white font-mono font-medium">{formatUsd(token.volume24h)}</span>
+          <span className="text-sm text-white font-mono font-medium">{formatUsd(token.volume24h)}</span>
         </td>
       )}
 
       {show('txns') && (
         <td className="px-2 py-3 text-right">
-          <span className="text-[13px] text-white font-mono">{formatNumber(token.txns24h)}</span>
+          <span className="text-sm text-white font-mono">{formatNumber(token.txns24h)}</span>
         </td>
       )}
 
       {show('liquidity') && (
         <td className="px-2 py-3 text-right">
-          <span className={`text-[13px] font-mono ${isLowLiquidity ? 'text-xdex-yellow/70' : 'text-white'}`}>{formatUsd(token.liquidity)}</span>
+          <span className={`text-sm font-mono ${isLowLiquidity ? 'text-xdex-yellow/70' : 'text-white'}`}>{formatUsd(token.liquidity)}</span>
         </td>
       )}
 
       {show('marketCap') && (
         <td className="px-2 py-3 text-right">
-          <span className="text-[13px] text-white font-mono font-medium">{formatUsd(token.marketCap)}</span>
+          <span className="text-sm text-white font-mono font-medium">{formatUsd(token.marketCap)}</span>
         </td>
       )}
 
       {show('makers') && (
         <td className="px-2 py-3 text-right">
-          <span className="text-[13px] text-white font-mono">{formatNumber(token.makers)}</span>
+          <span className="text-sm text-white font-mono">{formatNumber(token.makers)}</span>
         </td>
       )}
 
@@ -206,8 +211,8 @@ export default function TokenRow({
 
       {/* Swap button — far right */}
       <td className="px-2 py-3 text-center">
-        <button onClick={handleSwap} className="flex-shrink-0 rounded-md hover:opacity-80 transition-opacity mx-auto" title={`Swap ${token.baseToken.symbol}`}>
-          <img src="https://app.xdex.xyz/logo/logo.png" alt="Swap" className="w-6 h-6 object-contain" />
+        <button onClick={handleSwap} className="flex items-center justify-center w-8 h-8 rounded-lg bg-xdex-accent/10 border border-xdex-accent/20 hover:bg-xdex-accent/20 hover:border-xdex-accent/40 transition-all mx-auto" title={`Swap ${token.baseToken.symbol}`}>
+          <RefreshCw size={14} className="text-xdex-accent" />
         </button>
       </td>
     </tr>

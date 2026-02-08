@@ -312,9 +312,9 @@ export default function TokenDetail({
 
       <div className="relative ml-auto w-full h-full bg-black flex">
         {/* LEFT: Chart + bottom tabs */}
-        <div className="flex-1 flex flex-col min-w-0 border-r border-xdex-border">
+        <div className="flex-1 flex flex-col min-w-0 border-r border-xdex-accent/20">
           {/* Top bar */}
-          <div className="flex items-center justify-between px-4 h-12 border-b border-xdex-border flex-shrink-0">
+          <div className="flex items-center justify-between px-4 h-12 border-b border-xdex-accent/20 flex-shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
@@ -358,7 +358,7 @@ export default function TokenDetail({
           </div>
 
           {/* Chart controls */}
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-xdex-border/50 flex-shrink-0">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-xdex-accent/20/50 flex-shrink-0">
             <div className="flex items-center gap-1">
               {timeframes.map((tf) => (
                 <button
@@ -391,8 +391,8 @@ export default function TokenDetail({
           </div>
 
           {/* Bottom tabs */}
-          <div className="flex-1 flex flex-col min-h-0 border-t border-xdex-border">
-            <div className="flex items-center gap-0 border-b border-xdex-border flex-shrink-0">
+          <div className="flex-1 flex flex-col min-h-0 border-t border-xdex-accent/20">
+            <div className="flex items-center gap-0 border-b border-xdex-accent/20 flex-shrink-0">
               {bottomTabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -416,7 +416,7 @@ export default function TokenDetail({
             <div className="flex-1 overflow-y-auto">
               {bottomTab === 'transactions' && (
                 <div>
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-border/50 sticky top-0 bg-black z-10">
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-accent/20/50 sticky top-0 bg-black z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-white">Transactions</span>
                       <div className="flex items-center gap-1">
@@ -444,7 +444,7 @@ export default function TokenDetail({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-6 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
+                  <div className="grid grid-cols-6 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/20/30 sticky top-[37px] bg-black z-10">
                     <span>Date</span>
                     <span>Type</span>
                     <span className="text-right">Amount</span>
@@ -463,7 +463,7 @@ export default function TokenDetail({
                       {filteredTxns.map((tx) => (
                         <div
                           key={tx.signature}
-                          className="grid grid-cols-6 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
+                          className="grid grid-cols-6 px-4 py-2 text-[11px] border-b border-xdex-accent/20/20 hover:bg-white/[0.02] transition-colors"
                         >
                           <span className="text-xdex-text-muted">{formatTxAge(tx.timestamp)}</span>
                           <span className={
@@ -506,7 +506,7 @@ export default function TokenDetail({
 
               {bottomTab === 'holders' && (
                 <div>
-                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-0 bg-black z-10">
+                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/20/30 sticky top-0 bg-black z-10">
                     <span>Rank</span>
                     <span>Address</span>
                     <span className="text-right">Balance</span>
@@ -520,7 +520,7 @@ export default function TokenDetail({
                   ) : tokenHolders.length > 0 ? tokenHolders.map((h) => (
                     <div
                       key={h.rank}
-                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
+                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-accent/20/20 hover:bg-white/[0.02] transition-colors"
                     >
                       <span className="text-xdex-text-muted">#{h.rank}</span>
                       <span className="text-xdex-accent font-mono cursor-pointer hover:underline">
@@ -549,7 +549,7 @@ export default function TokenDetail({
 
               {bottomTab === 'lp' && (
                 <div>
-                  <div className="px-4 py-2 border-b border-xdex-border/50 sticky top-0 bg-black z-10">
+                  <div className="px-4 py-2 border-b border-xdex-accent/20/50 sticky top-0 bg-black z-10">
                     <span className="text-xs font-semibold text-white">
                       LP Holders
                       <span className="ml-2 text-[10px] text-xdex-text-muted font-normal">
@@ -557,7 +557,7 @@ export default function TokenDetail({
                       </span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-border/30 sticky top-[37px] bg-black z-10">
+                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/20/30 sticky top-[37px] bg-black z-10">
                     <span>Rank</span>
                     <span>Address</span>
                     <span className="text-right">LP Tokens</span>
@@ -571,7 +571,7 @@ export default function TokenDetail({
                   ) : lpHolders.length > 0 ? lpHolders.map((h) => (
                     <div
                       key={h.rank}
-                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-border/20 hover:bg-white/[0.02] transition-colors"
+                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-accent/20/20 hover:bg-white/[0.02] transition-colors"
                     >
                       <span className="text-xdex-text-muted">#{h.rank}</span>
                       <span className="text-xdex-accent font-mono cursor-pointer hover:underline">
@@ -640,7 +640,7 @@ export default function TokenDetail({
           )}
 
           {/* Token header */}
-          <div className="px-5 pt-5 pb-4 border-b border-xdex-border">
+          <div className="px-5 pt-5 pb-4 border-b border-xdex-accent/20">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 {t.baseToken.imageUrl ? (
@@ -729,7 +729,7 @@ export default function TokenDetail({
           </div>
 
           {/* Safety Score panel */}
-          <div className="px-5 py-3 border-b border-xdex-border">
+          <div className="px-5 py-3 border-b border-xdex-accent/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <Shield size={12} className={safety.color} />
@@ -768,7 +768,7 @@ export default function TokenDetail({
 
           {/* Rug Pull / Honeypot Analysis */}
           {rugAnalysis.flags.length > 0 && (
-            <div className="px-5 py-3 border-b border-xdex-border">
+            <div className="px-5 py-3 border-b border-xdex-accent/20">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <AlertTriangle size={12} className={rugAnalysis.color} />
@@ -809,7 +809,7 @@ export default function TokenDetail({
           )}
 
           {/* Community Sentiment */}
-          <div className="px-5 py-3 border-b border-xdex-border">
+          <div className="px-5 py-3 border-b border-xdex-accent/20">
             <div className="text-[10px] text-xdex-text-muted font-semibold uppercase tracking-wider mb-2">
               Community Sentiment
             </div>
@@ -848,7 +848,7 @@ export default function TokenDetail({
           </div>
 
           {/* Price Alerts */}
-          <div className="px-5 py-3 border-b border-xdex-border">
+          <div className="px-5 py-3 border-b border-xdex-accent/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <Bell size={12} className="text-xdex-text-muted" />
@@ -945,7 +945,7 @@ export default function TokenDetail({
 
           {/* Risk/Safety signals */}
           {(isLowLiquidity || isShallowLiquidity || isHighVolatility || isVeryNew || hasUnusualDecimals || hasSmallPrice) && (
-            <div className="px-5 py-3 border-b border-xdex-border space-y-1.5">
+            <div className="px-5 py-3 border-b border-xdex-accent/20 space-y-1.5">
               {isLowLiquidity && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-xdex-red/5 border border-xdex-red/15">
                   <AlertTriangle size={12} className="text-xdex-red flex-shrink-0" />
@@ -986,7 +986,7 @@ export default function TokenDetail({
           )}
 
           {/* Liquidity depth indicator */}
-          <div className="px-5 py-3 border-b border-xdex-border">
+          <div className="px-5 py-3 border-b border-xdex-accent/20">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] text-xdex-text-muted font-semibold uppercase">Liquidity Depth</span>
               <span className={`text-[10px] font-semibold ${
@@ -1014,7 +1014,7 @@ export default function TokenDetail({
           </div>
 
           {/* Wallet context placeholder */}
-          <div className="px-5 py-3 border-b border-xdex-border">
+          <div className="px-5 py-3 border-b border-xdex-accent/20">
             <div className="flex items-center gap-2 p-2.5 rounded-lg bg-xdex-card/30 border border-xdex-border/40">
               <Wallet size={14} className="text-xdex-text-muted" />
               <div className="flex-1">
@@ -1027,7 +1027,7 @@ export default function TokenDetail({
           </div>
 
           {/* Stats grid */}
-          <div className="px-5 py-4 border-b border-xdex-border">
+          <div className="px-5 py-4 border-b border-xdex-accent/20">
             <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[10px] text-xdex-text-muted font-semibold uppercase">LIQ</div>
@@ -1079,7 +1079,7 @@ export default function TokenDetail({
           </div>
 
           {/* Buy/Sell ratio */}
-          <div className="px-5 py-4 border-b border-xdex-border">
+          <div className="px-5 py-4 border-b border-xdex-accent/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <span className="text-xdex-green font-bold text-sm">{buys}</span>
@@ -1102,7 +1102,7 @@ export default function TokenDetail({
           </div>
 
           {/* Price Calculator */}
-          <div className="px-5 py-4 border-b border-xdex-border">
+          <div className="px-5 py-4 border-b border-xdex-accent/20">
             <div className="text-[10px] text-xdex-text-muted font-semibold uppercase tracking-wider mb-3">
               Price Calculator
             </div>
@@ -1135,7 +1135,7 @@ export default function TokenDetail({
           </div>
 
           {/* Pool Details */}
-          <div className="px-5 py-4 border-b border-xdex-border">
+          <div className="px-5 py-4 border-b border-xdex-accent/20">
             <div className="text-[10px] text-xdex-text-muted font-semibold uppercase tracking-wider mb-3">
               Pool Details
             </div>
@@ -1223,7 +1223,7 @@ export default function TokenDetail({
               </button>
             </div>
 
-            <div className="flex items-center justify-center mt-4 pt-3 border-t border-xdex-border/40">
+            <div className="flex items-center justify-center mt-4 pt-3 border-t border-xdex-accent/20/40">
               <AlphaLogo size={12} />
             </div>
           </div>

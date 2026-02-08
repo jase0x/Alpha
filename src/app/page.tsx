@@ -149,6 +149,9 @@ function AlphaPageContent() {
   // Sniper panel
   const [showSniper, setShowSniper] = useState(false);
 
+  // Time filter for price column (lifted from TokenTable)
+  const [priceTimeFilter, setPriceTimeFilter] = useState<TimeFilter>('24h');
+
   // Current tokens based on active chain
   const tokens = activeChain === 'x1' ? x1Tokens : solanaTokens;
 
@@ -473,6 +476,10 @@ function AlphaPageContent() {
         <Sidebar
           onAdvertise={() => setShowBoostForm(true)}
           onProfile={() => setShowBoostProfile(true)}
+          activeChain={activeChain}
+          onChainChange={setActiveChain}
+          x1Count={x1Tokens.length}
+          solanaCount={solanaTokens.length}
         />
       </div>
 
@@ -484,6 +491,10 @@ function AlphaPageContent() {
             <Sidebar
               onAdvertise={() => { setShowBoostForm(true); setMobileSidebarOpen(false); }}
               onProfile={() => { setShowBoostProfile(true); setMobileSidebarOpen(false); }}
+              activeChain={activeChain}
+              onChainChange={setActiveChain}
+              x1Count={x1Tokens.length}
+              solanaCount={solanaTokens.length}
             />
           </div>
         </div>
@@ -503,7 +514,7 @@ function AlphaPageContent() {
         />
 
         {/* Title bar: XDEX logo | Alpha | LIVE | filters | search | chain toggle */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-border bg-xdex-bg">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-accent/15 bg-xdex-bg">
           {/* Left: mobile menu + XDEX mark + Alpha + LIVE */}
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
@@ -555,6 +566,31 @@ function AlphaPageContent() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-xdex-border/60 mx-1 hidden sm:block" />
+
+            {/* Price timeframe toggle */}
+            <div className="hidden sm:flex items-center bg-black/50 rounded-lg p-0.5 border border-xdex-accent/15">
+              {([
+                { value: '5m' as TimeFilter, label: '5M' },
+                { value: '1h' as TimeFilter, label: '1H' },
+                { value: '6h' as TimeFilter, label: '6H' },
+                { value: '24h' as TimeFilter, label: '24H' },
+              ]).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setPriceTimeFilter(opt.value)}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    priceTimeFilter === opt.value
+                      ? 'bg-xdex-accent text-white'
+                      : 'text-xdex-text-muted hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -613,7 +649,7 @@ function AlphaPageContent() {
             <div className="w-px h-4 bg-xdex-border/40" />
 
             {/* Inline search */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-xdex-card border border-xdex-border/50 focus-within:border-xdex-accent/40 transition-colors">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black border border-xdex-accent/15 focus-within:border-xdex-accent/40 transition-colors">
               <Search size={12} className="text-xdex-text-muted flex-shrink-0" />
               <input
                 ref={searchInputRef}
@@ -631,42 +667,6 @@ function AlphaPageContent() {
                   &times;
                 </button>
               )}
-            </div>
-
-            {/* Chain toggle */}
-            <div className="flex items-center gap-1 bg-xdex-card/50 rounded-lg p-0.5 border border-xdex-border/50">
-              <button
-                onClick={() => setActiveChain('x1')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  activeChain === 'x1'
-                    ? 'bg-xdex-accent/15 text-xdex-accent'
-                    : 'text-xdex-text-muted hover:text-xdex-text'
-                }`}
-              >
-                <X1Logo size={14} />
-                <span className="hidden sm:inline">X1</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
-                }`}>
-                  {x1Tokens.length}
-                </span>
-              </button>
-              <button
-                onClick={() => setActiveChain('solana')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  activeChain === 'solana'
-                    ? 'bg-xdex-accent/15 text-xdex-accent'
-                    : 'text-xdex-text-muted hover:text-xdex-text'
-                }`}
-              >
-                <SolanaLogo size={14} />
-                <span className="hidden sm:inline">Solana</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
-                }`}>
-                  {solanaTokens.length}
-                </span>
-              </button>
             </div>
           </div>
         </div>
@@ -714,6 +714,7 @@ function AlphaPageContent() {
             boostMap={boostMap}
             visibleColumns={visibleColumns}
             selectedIndex={selectedIndex}
+            timeFilter={priceTimeFilter}
           />
         )}
       </div>

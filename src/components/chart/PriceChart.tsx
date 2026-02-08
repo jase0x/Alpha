@@ -49,11 +49,11 @@ export default function PriceChart({ data }: PriceChartProps) {
           },
         },
         rightPriceScale: {
-          borderColor: '#222222',
+          borderColor: '#1a3a5c',
           scaleMargins: { top: 0.1, bottom: 0.2 },
         },
         timeScale: {
-          borderColor: '#222222',
+          borderColor: '#1a3a5c',
           timeVisible: true,
           secondsVisible: false,
         },
@@ -62,11 +62,11 @@ export default function PriceChart({ data }: PriceChartProps) {
 
       // Candlestick series
       const candleSeries = chart.addCandlestickSeries({
-        upColor: '#22c55e',
+        upColor: '#00e676',
         downColor: '#ff1744',
-        borderUpColor: '#22c55e',
+        borderUpColor: '#00e676',
         borderDownColor: '#ff1744',
-        wickUpColor: '#22c55e',
+        wickUpColor: '#00e676',
         wickDownColor: '#ff1744',
       });
 
@@ -94,7 +94,7 @@ export default function PriceChart({ data }: PriceChartProps) {
       const volumeData = data.map((d) => ({
         time: d.time as any,
         value: d.volume,
-        color: d.close >= d.open ? 'rgba(34, 197, 94, 0.25)' : 'rgba(255, 23, 68, 0.25)',
+        color: d.close >= d.open ? 'rgba(0, 230, 118, 0.25)' : 'rgba(255, 23, 68, 0.25)',
       }));
 
       volumeSeries.setData(volumeData);

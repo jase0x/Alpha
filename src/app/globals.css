@@ -8,9 +8,9 @@
   --xdex-bg: #000000;
   --xdex-surface: #000000;
   --xdex-card: #000000;
-  --xdex-border: #222222;
+  --xdex-border: #1a3a5c;
   --xdex-accent: #0566ea;
-  --xdex-green: #22c55e;
+  --xdex-green: #00e676;
   --xdex-red: #ff1744;
   --xdex-yellow: #e68a00;
 }
@@ -38,12 +38,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #222222;
+  background: #1a3a5c;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #333333;
+  background: #2a4a6c;
 }
 
 /* Token table row hover */
@@ -62,7 +62,7 @@ html, body {
 
 /* Mini sparkline */
 .sparkline-up {
-  color: #22c55e;
+  color: #00e676;
 }
 
 .sparkline-down {
@@ -134,7 +134,7 @@ input:focus {
 }
 
 .buy-sell-bar .buy-portion {
-  background: #22c55e;
+  background: #00e676;
   transition: width 0.3s ease;
 }
 
