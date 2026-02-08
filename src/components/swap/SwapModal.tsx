@@ -9,9 +9,21 @@ import { fetchSwapQuote } from '@/services/api';
 interface SwapModalProps {
   token: TokenPair;
   onClose: () => void;
+  /** Wallet address if connected (provided by xdex_frontend) */
+  walletAddress?: string | null;
+  /** Callback to trigger wallet connection dialog */
+  onConnectWallet?: () => void;
+  /** Callback to execute on-chain swap (provided by xdex_frontend) */
+  onExecuteSwap?: (params: {
+    tokenIn: string;
+    tokenOut: string;
+    amountIn: string;
+    slippage: number;
+    chain: string;
+  }) => Promise<string | null>;
 }
 
-export default function SwapModal({ token, onClose }: SwapModalProps) {
+export default function SwapModal({ token, onClose, walletAddress, onConnectWallet, onExecuteSwap }: SwapModalProps) {
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [slippage, setSlippage] = useState(0.5);
@@ -20,6 +32,10 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
   const [loading, setLoading] = useState(false);
   const [priceImpact, setPriceImpact] = useState(0);
   const [quoteError, setQuoteError] = useState(false);
+  const [executing, setExecuting] = useState(false);
+  const [txHash, setTxHash] = useState<string | null>(null);
+
+  const isConnected = !!walletAddress;
 
   const fromToken = isSwapped ? token.baseToken : token.quoteToken;
   const toToken = isSwapped ? token.quoteToken : token.baseToken;
@@ -78,7 +94,35 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
     setToAmount(fromAmount);
   };
 
-  const handleSwap = () => {
+  const handleSwap = async () => {
+    if (!isConnected && onConnectWallet) {
+      onConnectWallet();
+      return;
+    }
+
+    if (isConnected && onExecuteSwap) {
+      setExecuting(true);
+      setTxHash(null);
+      try {
+        const hash = await onExecuteSwap({
+          tokenIn: fromToken.address,
+          tokenOut: toToken.address,
+          amountIn: fromAmount,
+          slippage,
+          chain: token.chain,
+        });
+        if (hash) {
+          setTxHash(hash);
+        }
+      } catch {
+        // swap failed — handled by parent
+      } finally {
+        setExecuting(false);
+      }
+      return;
+    }
+
+    // Fallback: open XDEX swap page in browser
     const xdexSwapUrl = `https://app.xdex.xyz/swap?inputToken=${fromToken.address}&outputToken=${toToken.address}&amount=${fromAmount}`;
     window.open(xdexSwapUrl, '_blank');
   };
@@ -142,7 +186,8 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
                   type="number"
                   value={slippage}
                   onChange={(e) => setSlippage(Number(e.target.value))}
-                  className="w-12 py-1.5 text-[11px] bg-transparent text-white text-right outline-none"
+                  onWheel={(e) => (e.target as HTMLElement).blur()}
+                  className="w-12 py-1.5 text-[11px] bg-transparent text-white text-right outline-none no-spin"
                   step={0.1}
                   min={0.01}
                   max={50}
@@ -162,10 +207,22 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
         <div className="p-5 space-y-1.5">
           {/* Wallet status */}
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-xdex-text-muted">
-              <Wallet size={12} />
-              <span className="text-[10px]">Wallet not connected</span>
-            </div>
+            {isConnected ? (
+              <div className="flex items-center gap-1.5 text-xdex-green">
+                <Wallet size={12} />
+                <span className="text-[10px] font-mono">
+                  {walletAddress!.slice(0, 6)}...{walletAddress!.slice(-4)}
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={onConnectWallet}
+                className="flex items-center gap-1.5 text-xdex-text-muted hover:text-xdex-accent transition-colors"
+              >
+                <Wallet size={12} />
+                <span className="text-[10px]">Connect wallet</span>
+              </button>
+            )}
           </div>
 
           {/* From token */}
@@ -321,15 +378,38 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
             </div>
           )}
 
+          {/* Tx success link */}
+          {txHash && (
+            <div className="flex items-center justify-center gap-1.5 p-3 rounded-xl border border-xdex-green/30 bg-xdex-green/5 mt-1">
+              <span className="text-[11px] text-xdex-green font-medium">Transaction submitted</span>
+              <a
+                href={token.chain === 'x1' ? `https://explorer.x1.xyz/tx/${txHash}` : `https://solscan.io/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xdex-accent hover:underline"
+              >
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          )}
+
           {/* Swap button */}
           <button
             onClick={handleSwap}
-            disabled={!fromAmount || Number(fromAmount) <= 0 || loading}
+            disabled={isConnected ? (!fromAmount || Number(fromAmount) <= 0 || loading || executing) : false}
             className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-xdex-accent text-white hover:brightness-110 active:scale-[0.98] mt-2"
           >
-            {loading ? (
+            {executing ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 size={14} className="animate-spin" /> Confirming swap...
+              </span>
+            ) : loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 size={14} className="animate-spin" /> Getting quote...
+              </span>
+            ) : !isConnected && onConnectWallet ? (
+              <span className="flex items-center justify-center gap-2">
+                <Wallet size={14} /> Connect Wallet
               </span>
             ) : 'Swap'}
           </button>

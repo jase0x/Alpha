@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-xdex-bg text-xdex-text antialiased">
+      <body className="bg-xdex-bg text-xdex-text antialiased h-screen overflow-hidden">
         <Providers>{children}</Providers>
       </body>
     </html>

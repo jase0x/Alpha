@@ -246,7 +246,7 @@ function AlphaPageContent() {
   }, [activeView, activeChain, searchQuery]);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full">
+    <div className="flex flex-col min-w-0 h-screen">
       {/* Filter bar */}
       <FilterBar
         activeView={activeView}
@@ -321,7 +321,6 @@ function AlphaPageContent() {
           onClose={() => setSelectedToken(null)}
           onSwap={(t) => {
             setSwapToken(t);
-            setSelectedToken(null);
           }}
           isFavorited={favorites.has(selectedToken.address)}
           onFavorite={toggleFavorite}
