@@ -66,11 +66,11 @@ function Sparkline({ token }: { token: TokenPair }) {
     const min = Math.min(...expanded);
     const max = Math.max(...expanded);
     const range = max - min;
-    // When data is truly flat, create gentle movement
+    // When data is truly flat, show a solid horizontal line
     if (range === 0) {
       return expanded.map((_, i) => ({
         x: (i / (numPoints - 1)) * 110,
-        y: 16 + Math.sin(seed * 0.1 + i * 0.7) * 8 + Math.cos(seed * 0.3 + i * 1.1) * 4,
+        y: 16,
       }));
     }
     return expanded.map((p, i) => ({

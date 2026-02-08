@@ -358,7 +358,7 @@ export default function TokenDetail({
           </div>
 
           {/* Chart controls */}
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-xdex-accent/20/50 flex-shrink-0">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-xdex-accent/15 flex-shrink-0">
             <div className="flex items-center gap-1">
               {timeframes.map((tf) => (
                 <button
@@ -416,7 +416,7 @@ export default function TokenDetail({
             <div className="flex-1 overflow-y-auto">
               {bottomTab === 'transactions' && (
                 <div>
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-accent/20/50 sticky top-0 bg-black z-10">
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-accent/15 sticky top-0 bg-black z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-white">Transactions</span>
                       <div className="flex items-center gap-1">
@@ -444,7 +444,7 @@ export default function TokenDetail({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-6 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/20/30 sticky top-[37px] bg-black z-10">
+                  <div className="grid grid-cols-6 px-4 py-1.5 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/10 sticky top-[37px] bg-black z-10">
                     <span>Date</span>
                     <span>Type</span>
                     <span className="text-right">Amount</span>
@@ -463,7 +463,7 @@ export default function TokenDetail({
                       {filteredTxns.map((tx) => (
                         <div
                           key={tx.signature}
-                          className="grid grid-cols-6 px-4 py-2 text-[11px] border-b border-xdex-accent/20/20 hover:bg-white/[0.02] transition-colors"
+                          className="grid grid-cols-6 px-4 py-2 text-[11px] border-b border-xdex-accent/10 hover:bg-white/[0.02] transition-colors"
                         >
                           <span className="text-xdex-text-muted">{formatTxAge(tx.timestamp)}</span>
                           <span className={
@@ -506,7 +506,7 @@ export default function TokenDetail({
 
               {bottomTab === 'holders' && (
                 <div>
-                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/20/30 sticky top-0 bg-black z-10">
+                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/10 sticky top-0 bg-black z-10">
                     <span>Rank</span>
                     <span>Address</span>
                     <span className="text-right">Balance</span>
@@ -520,7 +520,7 @@ export default function TokenDetail({
                   ) : tokenHolders.length > 0 ? tokenHolders.map((h) => (
                     <div
                       key={h.rank}
-                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-accent/20/20 hover:bg-white/[0.02] transition-colors"
+                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-accent/10 hover:bg-white/[0.02] transition-colors"
                     >
                       <span className="text-xdex-text-muted">#{h.rank}</span>
                       <span className="text-xdex-accent font-mono cursor-pointer hover:underline">
@@ -549,7 +549,7 @@ export default function TokenDetail({
 
               {bottomTab === 'lp' && (
                 <div>
-                  <div className="px-4 py-2 border-b border-xdex-accent/20/50 sticky top-0 bg-black z-10">
+                  <div className="px-4 py-2 border-b border-xdex-accent/15 sticky top-0 bg-black z-10">
                     <span className="text-xs font-semibold text-white">
                       LP Holders
                       <span className="ml-2 text-[10px] text-xdex-text-muted font-normal">
@@ -557,7 +557,7 @@ export default function TokenDetail({
                       </span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/20/30 sticky top-[37px] bg-black z-10">
+                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] text-xdex-text-muted font-semibold uppercase border-b border-xdex-accent/10 sticky top-[37px] bg-black z-10">
                     <span>Rank</span>
                     <span>Address</span>
                     <span className="text-right">LP Tokens</span>
@@ -571,7 +571,7 @@ export default function TokenDetail({
                   ) : lpHolders.length > 0 ? lpHolders.map((h) => (
                     <div
                       key={h.rank}
-                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-accent/20/20 hover:bg-white/[0.02] transition-colors"
+                      className="grid grid-cols-4 px-4 py-2 text-[11px] border-b border-xdex-accent/10 hover:bg-white/[0.02] transition-colors"
                     >
                       <span className="text-xdex-text-muted">#{h.rank}</span>
                       <span className="text-xdex-accent font-mono cursor-pointer hover:underline">
@@ -1223,7 +1223,7 @@ export default function TokenDetail({
               </button>
             </div>
 
-            <div className="flex items-center justify-center mt-4 pt-3 border-t border-xdex-accent/20/40">
+            <div className="flex items-center justify-center mt-4 pt-3 border-t border-xdex-accent/15">
               <AlphaLogo size={12} />
             </div>
           </div>

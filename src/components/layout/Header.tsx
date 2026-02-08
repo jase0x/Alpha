@@ -127,7 +127,7 @@ export default function Header({ tokens, allTokens, onTokenClick }: HeaderProps)
   };
 
   return (
-    <header className="relative h-10 bg-black border-b border-xdex-border overflow-hidden">
+    <header className="relative h-10 bg-black border-b border-[#222] overflow-hidden">
       <div
         className="trending-banner flex items-center gap-8 h-full whitespace-nowrap"
         style={{

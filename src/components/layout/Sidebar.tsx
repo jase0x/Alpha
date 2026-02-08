@@ -69,12 +69,12 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`flex flex-col h-full bg-black border-r border-xdex-border transition-all duration-200 ${
+      className={`flex flex-col h-full bg-black border-r border-[#222] transition-all duration-200 ${
         collapsed ? 'w-14' : 'w-56'
       }`}
     >
       {/* XDEX Logo */}
-      <div className="flex items-center px-3 h-14 border-b border-xdex-border">
+      <div className="flex items-center px-3 h-14 border-b border-[#222]">
         <div className="flex items-center gap-2">
           <XdexLogo size={collapsed ? 26 : 28} />
           {!collapsed && (
@@ -83,69 +83,16 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Chain selector */}
-      <div className={`px-2 pt-2 pb-1 ${collapsed ? 'px-1' : ''}`}>
-        {!collapsed && (
-          <div className="px-2 pb-1.5">
-            <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
-              Network
-            </span>
-          </div>
-        )}
-        <div className={`flex ${collapsed ? 'flex-col gap-1' : 'gap-1'}`}>
-          <button
-            onClick={() => onChainChange?.('x1')}
-            className={`flex items-center gap-2 flex-1 px-2.5 py-2 text-xs font-medium rounded-lg transition-all border ${
-              activeChain === 'x1'
-                ? 'bg-xdex-accent/10 text-xdex-accent border-xdex-accent/25'
-                : 'text-xdex-text-muted border-transparent hover:text-xdex-text hover:bg-white/[0.03]'
-            } ${collapsed ? 'justify-center px-1' : ''}`}
-          >
-            <X1Logo size={14} />
-            {!collapsed && (
-              <>
-                <span>X1</span>
-                <span className={`text-[9px] ml-auto px-1.5 py-0.5 rounded-full ${
-                  activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
-                }`}>
-                  {x1Count}
-                </span>
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => onChainChange?.('solana')}
-            className={`flex items-center gap-2 flex-1 px-2.5 py-2 text-xs font-medium rounded-lg transition-all border ${
-              activeChain === 'solana'
-                ? 'bg-xdex-accent/10 text-xdex-accent border-xdex-accent/25'
-                : 'text-xdex-text-muted border-transparent hover:text-xdex-text hover:bg-white/[0.03]'
-            } ${collapsed ? 'justify-center px-1' : ''}`}
-          >
-            <SolanaLogo size={14} />
-            {!collapsed && (
-              <>
-                <span>Solana</span>
-                <span className={`text-[9px] ml-auto px-1.5 py-0.5 rounded-full ${
-                  activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-xdex-border/50'
-                }`}>
-                  {solanaCount}
-                </span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
       {/* XDEX Navigation */}
       {!collapsed && (
-        <div className="px-4 pb-1.5 pt-2">
+        <div className="px-4 pb-1.5 pt-3">
           <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
             Platform
           </span>
         </div>
       )}
 
-      <nav className="flex-1 px-2 pt-1">
+      <nav className="px-2 pt-1">
         {xdexNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.isActive;
@@ -189,7 +136,7 @@ export default function Sidebar({
                   <>
                     <span className="font-medium">{item.label}</span>
                     {item.comingSoon && (
-                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-xdex-border/40 text-xdex-text-muted">
+                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-[#222]/60 text-xdex-text-muted">
                         Soon
                       </span>
                     )}
@@ -221,8 +168,8 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Degen LaunchPad button */}
-      <div className="px-3 pb-3">
+      {/* Degen LaunchPad button — moved up, right after nav */}
+      <div className="px-3 pt-2 pb-2">
         <a
           href="https://app.xdex.xyz/launchpad"
           target="_blank"
@@ -236,10 +183,66 @@ export default function Sidebar({
         </a>
       </div>
 
+      {/* Network selector — below Degen LaunchPad */}
+      <div className={`px-2 pt-1 pb-2 border-t border-[#222] mt-1 ${collapsed ? 'px-1' : ''}`}>
+        {!collapsed && (
+          <div className="px-2 pt-2 pb-1.5">
+            <span className="text-[10px] font-semibold text-xdex-text-muted uppercase tracking-widest">
+              Network
+            </span>
+          </div>
+        )}
+        <div className={`flex ${collapsed ? 'flex-col gap-1' : 'gap-1'}`}>
+          <button
+            onClick={() => onChainChange?.('x1')}
+            className={`flex items-center gap-2 flex-1 px-2.5 py-2 text-xs font-medium rounded-lg transition-all border ${
+              activeChain === 'x1'
+                ? 'bg-xdex-accent/10 text-xdex-accent border-xdex-accent/25'
+                : 'text-xdex-text-muted border-transparent hover:text-xdex-text hover:bg-white/[0.03]'
+            } ${collapsed ? 'justify-center px-1' : ''}`}
+          >
+            <X1Logo size={14} />
+            {!collapsed && (
+              <>
+                <span>X1</span>
+                <span className={`text-[9px] ml-auto px-1.5 py-0.5 rounded-full ${
+                  activeChain === 'x1' ? 'bg-xdex-accent/15' : 'bg-[#222]/60'
+                }`}>
+                  {x1Count}
+                </span>
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => onChainChange?.('solana')}
+            className={`flex items-center gap-2 flex-1 px-2.5 py-2 text-xs font-medium rounded-lg transition-all border ${
+              activeChain === 'solana'
+                ? 'bg-xdex-accent/10 text-xdex-accent border-xdex-accent/25'
+                : 'text-xdex-text-muted border-transparent hover:text-xdex-text hover:bg-white/[0.03]'
+            } ${collapsed ? 'justify-center px-1' : ''}`}
+          >
+            <SolanaLogo size={14} />
+            {!collapsed && (
+              <>
+                <span>Solana</span>
+                <span className={`text-[9px] ml-auto px-1.5 py-0.5 rounded-full ${
+                  activeChain === 'solana' ? 'bg-xdex-accent/15' : 'bg-[#222]/60'
+                }`}>
+                  {solanaCount}
+                </span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center h-9 border-t border-xdex-border text-xdex-text-muted hover:text-xdex-text transition-colors"
+        className="flex items-center justify-center h-9 border-t border-[#222] text-xdex-text-muted hover:text-xdex-text transition-colors"
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>

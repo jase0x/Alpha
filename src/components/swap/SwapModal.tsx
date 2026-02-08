@@ -98,9 +98,6 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-xdex-border/60">
           <div className="flex items-center gap-2.5">
             <h3 className="text-base font-semibold text-white">Swap</h3>
-            <span className="text-[10px] text-xdex-text-muted bg-xdex-border/30 px-2 py-0.5 rounded">
-              via XDEX
-            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -172,7 +169,7 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
           </div>
 
           {/* From token */}
-          <div className="bg-black rounded-xl border border-xdex-border/60 p-4 focus-within:border-xdex-accent/30 transition-colors">
+          <div className="bg-black rounded-xl border border-xdex-border/60 p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] text-xdex-text-muted font-medium">You pay</span>
               <span className="text-[11px] text-xdex-text-muted">Balance: --</span>
@@ -183,7 +180,8 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
                 placeholder="0.00"
                 value={fromAmount}
                 onChange={(e) => handleFromChange(e.target.value)}
-                className="flex-1 text-2xl font-semibold bg-transparent text-white placeholder:text-xdex-text-muted/40 font-mono outline-none min-w-0"
+                className="flex-1 text-2xl font-semibold bg-transparent text-white placeholder:text-xdex-text-muted/40 font-mono outline-none min-w-0 border-none shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                style={{ boxShadow: 'none' }}
               />
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-xdex-card/50 border border-xdex-border/60 flex-shrink-0">
                 {fromToken.imageUrl ? (
@@ -333,21 +331,9 @@ export default function SwapModal({ token, onClose }: SwapModalProps) {
               <span className="flex items-center justify-center gap-2">
                 <Loader2 size={14} className="animate-spin" /> Getting quote...
               </span>
-            ) : 'Swap via XDEX'}
+            ) : 'Swap'}
           </button>
 
-          {/* Footer */}
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <span className="text-[10px] text-xdex-text-muted">Powered by</span>
-            <a
-              href="https://app.xdex.xyz"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[10px] text-xdex-accent hover:underline"
-            >
-              XDEX <ExternalLink size={8} />
-            </a>
-          </div>
         </div>
       </div>
     </div>

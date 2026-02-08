@@ -514,7 +514,7 @@ function AlphaPageContent() {
         />
 
         {/* Title bar: XDEX logo | Alpha | LIVE | filters | search | chain toggle */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-xdex-accent/15 bg-xdex-bg">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#222] bg-xdex-bg">
           {/* Left: mobile menu + XDEX mark + Alpha + LIVE */}
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
@@ -526,7 +526,6 @@ function AlphaPageContent() {
             </button>
 
             <div className="flex items-center gap-1.5">
-              <XdexMark size={20} />
               <span className="text-sm font-bold text-white tracking-tight">Alpha</span>
             </div>
             <div className="flex items-center gap-1 ml-1">
@@ -592,9 +591,30 @@ function AlphaPageContent() {
                 </button>
               ))}
             </div>
+
+            {/* Inline search — right of timeframe */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black border border-xdex-accent/15 focus-within:border-xdex-accent/40 transition-colors">
+              <Search size={12} className="text-xdex-text-muted flex-shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search tokens..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent text-xs text-white placeholder:text-xdex-text-muted outline-none w-28 focus:w-40 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-xdex-text-muted hover:text-white text-xs"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Right: Tools + Search + Chain toggle */}
+          {/* Right: Tools */}
           <div className="flex items-center gap-2">
             {/* Screener filters */}
             <button
@@ -644,30 +664,6 @@ function AlphaPageContent() {
             >
               <Settings2 size={14} />
             </button>
-
-            {/* Divider */}
-            <div className="w-px h-4 bg-xdex-border/40" />
-
-            {/* Inline search */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black border border-xdex-accent/15 focus-within:border-xdex-accent/40 transition-colors">
-              <Search size={12} className="text-xdex-text-muted flex-shrink-0" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search tokens..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-xs text-white placeholder:text-xdex-text-muted outline-none w-28 focus:w-40 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-xdex-text-muted hover:text-white text-xs"
-                >
-                  &times;
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
